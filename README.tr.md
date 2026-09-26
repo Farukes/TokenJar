@@ -50,15 +50,15 @@ TokenJar, yapay zeka kodlama asistanınız ile kod tabanınız arasında yer ala
 
 ---
 
-## 🚀 Hızlı Başlangıç ve Kurulum (v1.0.2 GA)
+## 🚀 Hızlı Başlangıç ve Kurulum (v1.0.3 GA)
 
 TokenJar iki resmi sürüm halinde dağıtılmaktadır:
 1. **🦀 Rust Yerel Motoru (Önerilen):** Mikrosaniyelik AST ayrıştırma, 14 MB RAM ve sıfır Python bağımlılığı içeren yüksek performanslı tekil ikili dosya.
 2. **🐍 Python Sürümü:** pip ve sanal ortamlar (venv) için saf Python FastMCP paketi.
 
-### 📥 Doğrudan İndirme Bağlantıları (Derlenmiş v1.0.2 İkili Dosyaları)
+### 📥 Doğrudan İndirme Bağlantıları (Derlenmiş v1.0.3 İkili Dosyaları)
 
-İşletim sisteminize tıklayarak en güncel v1.0.2 sürümünü anında indirin:
+İşletim sisteminize tıklayarak en güncel v1.0.3 sürümünü anında indirin:
 
 | Platform | Mimari | Tıkla ve İndir | Format |
 |:---|:---|:---|:---|
@@ -110,11 +110,33 @@ pip install git+https://github.com/Farukes/TokenJar.git
 
 ---
 
+### 🔄 TokenJar'ı Güncelleme
+
+Mevcut TokenJar kurulumunuzu en son özelliklere ve performans iyileştirmelerine yükseltmek için:
+
+```bash
+# TokenJar CLI ile otomatik güncelleme ('update' veya 'upgrade' ikisi de geçerlidir):
+tokenjar update
+# veya:
+tokenjar upgrade
+
+# Varsa zorla yeniden indirip kurmak için:
+tokenjar update --force
+
+# pip ile kurulduysa:
+pip install --upgrade tokenjar
+
+# Cargo ile kurulduysa:
+cargo install tokenjar --force
+```
+
+---
+
 ## 📊 Kanıtlanmış Performans ve Stres Testi Sonuçları
 
 100 adımlık gerçek geliştirici stres testi ve 50 döngülük eşit şartlardaki MCP testinden elde edilen net ölçüm sonuçları:
 
-| Metrik | 1. Düz AI (TokenJar Yok) | 2. TokenJar Python | 3. TokenJar Rust (v1.0.2) | Rust Avantajı |
+| Metrik | 1. Düz AI (TokenJar Yok) | 2. TokenJar Python | 3. TokenJar Rust (v1.0.3) | Rust Avantajı |
 |:---|:---|:---|:---|:---|
 | **Tüketilen Token (100 Adım)** | 622.892 tokens | 95.492 tokens | **68.641 tokens** | **%89.0 net tasarruf (554k token kurtarıldı)** |
 | **Uçtan Uca Kodlama Tasarrufu** | 166.513 tokens | 12.400 tokens | **6.585 tokens** | **🚀 %96.0 net tasarruf (Cerrahi bloklar)** |
