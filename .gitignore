@@ -44,6 +44,15 @@ target/
 .DS_Store
 Thumbs.db
 
+# Secrets & Environment
+.env
+.env.*
+*.env
+.pypirc
+credentials*
+*.pem
+*.key
+
 # Assets (Local design prototypes)
 assets/*.psd
 assets/*.tmp
