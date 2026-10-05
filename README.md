@@ -67,11 +67,11 @@ TokenJar is distributed in two official editions:
 >    tokenjar install
 >    ```
 >    This automatically adds TokenJar to your system `PATH`, configures MCP across all detected AI assistants (Cursor, Claude Desktop, Antigravity, Windsurf, Claude Code), and sets up slash commands.
-> 3. **Activate in Your Project:** In any project directory, run:
+> 3. **Activate in Your Project (CLI Recommended):** Open a terminal in your project repository and run:
 >    ```bash
 >    tokenjar on
 >    ```
->    *(Or type `/tokenjar on` directly into your AI assistant chat).* This injects repository steering rules (`AGENTS.md`) so your assistant automatically routes through TokenJar's token-saving MCP tools.
+>    *(Running `tokenjar on` directly in your terminal/CLI is strongly recommended over typing `/tokenjar on` in the chat, as it creates rules before the assistant session starts and consumes zero conversation tokens).* This injects repository steering rules (`AGENTS.md`) so your assistant automatically routes through TokenJar's token-saving MCP tools from turn 1.
 
 ### 📥 1-Click Direct Downloads (Precompiled Binaries)
 

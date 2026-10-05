@@ -67,11 +67,11 @@ TokenJar iki resmi sürüm halinde dağıtılmaktadır:
 >    tokenjar install
 >    ```
 >    Bu komut TokenJar'ı sistem `PATH` ortam değişkenine ekler, tespit edilen tüm yapay zeka asistanlarına (Cursor, Claude Desktop, Antigravity, Windsurf, Claude Code) MCP sunucusunu otomatik bağlar ve slash komutlarını yükler.
-> 3. **Projenizde Aktifleştirin:** Kodlama yapacağınız projenin dizininde veya terminalinde şu komutu çalıştırın:
+> 3. **Projenizde Aktifleştirin (Terminal/CLI Önerilir):** Kodlama yapacağınız projenin dizininde bir terminal açıp şu komutu çalıştırın:
 >    ```bash
 >    tokenjar on
 >    ```
->    *(Veya doğrudan yapay zeka asistanınızın sohbet penceresine `/tokenjar on` yazın).* Bu işlem projenize `AGENTS.md` kurallarını ekleyerek asistanınızın TokenJar'ın yüksek tasarruflu MCP araçlarını kullanmasını sağlar.
+>    *(Bu komutu yapay zeka sohbetine yazmak yerine doğrudan kendi terminalinizde/CLI'da çalıştırmanız özellikle önerilir; çünkü sohbet token'ı harcamadan kuralları anında hazır eder ve yapay zeka ilk adımdan itibaren kuralları okuyarak başlar).* Bu işlem projenize `AGENTS.md` kurallarını ekleyerek asistanınızın TokenJar'ın yüksek tasarruflu MCP araçlarını kullanmasını sağlar.
 
 ### 📥 Doğrudan İndirme Bağlantıları (Derlenmiş v1.1.0 İkili Dosyaları)
 
