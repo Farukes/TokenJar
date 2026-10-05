@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.1.0] - 2026-10-06 (GA Release)
+## [1.1.0] - 2026-10-06 (AI Token Optimizer — GA Release)
 
 ### 🚀 Highlights & Major Features
 
