@@ -30,7 +30,8 @@ def generate_rules(compact_output: bool = True, prevent_truncation: bool = True)
         "   - ALWAYS use `tool_get_code_skeleton` to inspect classes, signatures, and docstrings before reading full file implementations.",
         "   - ALWAYS use `get_repo_map_tool` to explore repository architecture instead of listing and reading multiple files.",
         "3. **Terminal & Test Execution (MANDATORY):**",
-        "   - Use `run_command_smart` or `filter_output` for test runners (`pytest`, `npm test`, `cargo test`, `jest`) to prune repetitive passing logs.",
+        "   - For fast test suites and scripts (`pytest`, `npm test`, targeted unit tests): Use `run_command_smart` directly.",
+        "   - For heavy compilation or workspace-wide builds (e.g. `cargo test --workspace`, `cargo build --release`): Run via native terminal, then pass output through `filter_output` to prune logs without blocking the MCP connection.",
     ]
     if compact_output:
         lines.extend(

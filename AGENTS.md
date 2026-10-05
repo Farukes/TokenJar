@@ -11,7 +11,8 @@ CRITICAL MANDATE: Do NOT use native file viewers (view_file, cat) or raw termina
    - ALWAYS use `tool_get_code_skeleton` to inspect classes, signatures, and docstrings before reading full file implementations.
    - ALWAYS use `get_repo_map_tool` to explore repository architecture instead of listing and reading multiple files.
 3. **Terminal & Test Execution (MANDATORY):**
-   - Use `run_command_smart` or `filter_output` for test runners (`pytest`, `npm test`, `cargo test`, `jest`) to prune repetitive passing logs.
+   - For fast test suites and scripts (`pytest`, `npm test`, targeted unit tests): Use `run_command_smart` directly.
+   - For heavy compilation or workspace-wide builds (e.g. `cargo test --workspace`, `cargo build --release`): Run via native terminal, then pass output through `filter_output` to prune logs without blocking the MCP connection.
 4. **Output Optimization & Code Quality Mandate (STRICT):**
    - Targeted File Slices: When inspecting specific functions or line ranges, pass `symbol="function_name"` or `start_line`/`end_line` to `read_file_smart` to avoid dumping whole files into context.
    - Surgical File Edits: When modifying code, use surgical replacement blocks targeting precise line ranges instead of rewriting entire unchanged files.

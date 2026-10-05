@@ -360,7 +360,7 @@ impl McpServer {
             },
             {
                 "name": "run_command_smart",
-                "description": "Executes a shell command and returns intelligently filtered output. Prunes test runners and build output to minimize token consumption.",
+                "description": "Executes a shell command and returns intelligently filtered output. Prunes test runners and build output to minimize token consumption. For heavy compilation or workspace-wide builds, run in native terminal and pipe to filter_output to avoid MCP channel stalls.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
