@@ -767,22 +767,22 @@ pub fn uninstall_all_slash_commands() -> Vec<(&'static str, bool, String)> {
         }
     }
 
-    // 2. Antigravity MCP schemas (current + legacy)
-    for name in ["tokenjar", "token-saver", "token_saver"] {
-        let agy_schema_dir = home
-            .join(".gemini")
-            .join("antigravity-cli")
-            .join("mcp")
-            .join(name);
-        if agy_schema_dir.exists() {
-            let _ = fs::remove_dir_all(&agy_schema_dir);
+    // 2. Antigravity MCP schemas (current + legacy across all variations)
+    for sub in ["antigravity", "antigravity-cli", "antigravity-ide"] {
+        for name in ["tokenjar", "token-saver", "token_saver"] {
+            let schema_dir = home.join(".gemini").join(sub).join("mcp").join(name);
+            if schema_dir.exists() {
+                let _ = fs::remove_dir_all(&schema_dir);
+            }
         }
+    }
+    for name in ["token-saver", "token_saver"] {
         let legacy_skill = home
             .join(".gemini")
             .join("config")
             .join("skills")
             .join(name);
-        if name != "tokenjar" && legacy_skill.exists() {
+        if legacy_skill.exists() {
             let _ = fs::remove_dir_all(&legacy_skill);
         }
     }
