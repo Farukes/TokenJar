@@ -28,21 +28,38 @@ struct Cli {
 #[derive(Subcommand)]
 #[allow(clippy::enum_variant_names)]
 enum Commands {
-    /// Turn on TokenJar for current project (or use --global for all IDEs)
-    #[command(alias = "enable")]
+    /// One-time system install: adds to PATH, enables MCP across detected IDEs, sets up slash commands
+    Install {
+        /// Force configure across all IDEs even if not currently detected
+        #[arg(long)]
+        all: bool,
+    },
+
+    /// Turn on TokenJar in current project (creates/updates AGENTS.md rules)
     On {
         /// Configure across all detected IDEs globally without injecting project rules
         #[arg(short, long)]
         global: bool,
     },
 
-    /// Turn off TokenJar for current project (or use --global to uninstall from IDEs)
-    #[command(alias = "disable")]
+    /// Turn off TokenJar in current project (cleans AGENTS.md rules)
     Off {
         /// Uninstall TokenJar MCP configuration globally from all detected IDEs
         #[arg(short, long)]
         global: bool,
     },
+
+    /// Enable TokenJar MCP server in all detected AI assistants globally
+    #[command(alias = "enable-mcp")]
+    Enable {
+        /// Configure for all supported IDEs even if not detected
+        #[arg(long)]
+        all: bool,
+    },
+
+    /// Disable TokenJar MCP server from all AI assistants globally
+    #[command(alias = "disable-mcp")]
+    Disable,
 
     /// Inject TokenJar steering rules into project (AGENTS.md, .cursorrules)
     #[command(alias = "init-rules", alias = "inject")]
@@ -223,14 +240,76 @@ async fn main() {
 
             println!("============================================================");
             println!("Useful Commands:");
-            println!("  tokenjar on           -> Enable TokenJar for THIS project");
-            println!("  tokenjar off          -> Disable TokenJar for THIS project");
-            println!("  tokenjar on --global  -> Enable MCP across all IDEs globally");
-            println!("  tokenjar off --global -> Disable MCP across all IDEs globally");
+            println!("  tokenjar install      -> One-time setup: adds to PATH & enables IDE MCP");
+            println!("  tokenjar on           -> Activate TokenJar & generate AGENTS.md in project");
+            println!("  tokenjar off          -> Deactivate TokenJar & clean AGENTS.md from project");
+            println!("  tokenjar enable       -> Enable MCP server in all detected IDEs globally");
+            println!("  tokenjar disable      -> Disable MCP server from all IDEs globally");
             println!("  tokenjar ui           -> Open Web Dashboard in browser");
             println!("  tokenjar stats        -> View live token and financial savings");
             println!("  tokenjar status       -> Check operational status");
             println!("============================================================");
+        }
+        Some(Commands::Install { all }) => {
+            println!("============================================================");
+            println!("📦 TOKENJAR AUTOMATIC SYSTEM INSTALLER");
+            println!("============================================================");
+
+            // 1. Add to PATH
+            let (path_ok, path_msg) = tokenjar_core::installer::ensure_in_user_path();
+            if path_ok {
+                println!("  🟢 System PATH: {path_msg}");
+            } else {
+                println!("  ⚠️ System PATH: {path_msg}");
+            }
+
+            // 2. Configure MCP server in detected IDEs
+            println!("\n🔌 Activating TokenJar MCP across AI assistants...");
+            let results = install_mcp_all(*all, None);
+            for r in results {
+                let icon = if r.success {
+                    "🟢"
+                } else if r.message.contains("Skipped") {
+                    "⚪"
+                } else {
+                    "❌"
+                };
+                println!("  {icon} {}: {}", r.ide_name, r.message);
+            }
+
+            // 3. Install slash commands
+            let _ = tokenjar_core::installer::install_all_slash_commands(true);
+            println!("  🟢 Slash Commands: Configured /tokenjar in Antigravity and Claude Code");
+
+            println!("\n✨ TokenJar has been successfully installed & activated globally!");
+            println!("💡 To activate in any project and generate AGENTS.md, run:");
+            println!("     tokenjar on");
+            println!("============================================================");
+        }
+        Some(Commands::Enable { all }) | Some(Commands::InstallMcp { all }) => {
+            println!("🔌 Activating TokenJar MCP across AI assistants...");
+            let results = install_mcp_all(*all, None);
+            for r in results {
+                let icon = if r.success {
+                    "🟢"
+                } else if r.message.contains("Skipped") {
+                    "⚪"
+                } else {
+                    "❌"
+                };
+                println!("  {icon} {}: {}", r.ide_name, r.message);
+            }
+            println!("\n✨ TokenJar MCP is now ACTIVE across detected IDEs!");
+            println!("💡 Run 'tokenjar on' in your project to inject AGENTS.md rules.");
+        }
+        Some(Commands::Disable) | Some(Commands::UninstallMcp) => {
+            println!("🔌 Deactivating TokenJar MCP globally from all AI assistants...");
+            let results = uninstall_mcp_all();
+            for r in results {
+                let icon = if r.success { "⚪" } else { "❌" };
+                println!("  {icon} {}: {}", r.ide_name, r.message);
+            }
+            println!("\n⚪ TokenJar MCP has been deactivated globally.");
         }
         Some(Commands::On { global }) => {
             if *global {
@@ -274,7 +353,7 @@ async fn main() {
                     }
                 }
 
-                println!("📝 Injecting TokenJar steering rules into current project...");
+                println!("📝 Generating TokenJar rules (AGENTS.md) in current project...");
                 let rule_results = install_rules(Path::new("."), true, true);
                 for r in rule_results {
                     let icon = if r.success { "🟢" } else { "❌" };
@@ -287,7 +366,7 @@ async fn main() {
                 }
 
                 println!("\n✨ TokenJar is now ACTIVE for this project!");
-                println!("💡 Other projects remain unaffected unless explicitly enabled.");
+                println!("🤖 AGENTS.md rule file is ready for AI coding assistants.");
             }
         }
         Some(Commands::Off { global }) => {
@@ -300,36 +379,14 @@ async fn main() {
                 }
                 println!("\n⚪ TokenJar has been deactivated globally.");
             } else {
-                println!("📝 Cleaning TokenJar steering rules from current project...");
+                println!("📝 Cleaning TokenJar rules from current project...");
                 let rule_results = remove_rules(Path::new("."));
                 for r in rule_results {
                     println!("  🔴 {}: {}", r.file_name, r.message);
                 }
                 println!("\n⚪ TokenJar has been deactivated for THIS project.");
                 println!("💡 Global MCP and other projects remain active and unaffected.");
-                println!("   (To remove globally from all IDEs, run: tokenjar off --global)");
-            }
-        }
-        Some(Commands::InstallMcp { all }) => {
-            println!("🔌 Configuring TokenJar MCP across AI assistants...");
-            let results = install_mcp_all(*all, None);
-            for r in results {
-                let icon = if r.success {
-                    "🟢"
-                } else if r.message.contains("Skipped") {
-                    "⚪"
-                } else {
-                    "❌"
-                };
-                println!("  {icon} {}: {}", r.ide_name, r.message);
-            }
-        }
-        Some(Commands::UninstallMcp) => {
-            println!("🔌 Removing TokenJar MCP configuration...");
-            let results = uninstall_mcp_all();
-            for r in results {
-                let icon = if r.success { "⚪" } else { "❌" };
-                println!("  {icon} {}: {}", r.ide_name, r.message);
+                println!("   (To remove globally from all IDEs, run: tokenjar disable)");
             }
         }
         Some(Commands::SetupCommands) => {

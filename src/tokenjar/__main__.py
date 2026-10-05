@@ -76,9 +76,20 @@ def main() -> None:
     # Subcommand: unhook
     subparsers.add_parser("unhook", help="Safely remove all installed shell hooks")
 
-    # Subcommand: on / enable
+    # Subcommand: install
+    install_parser = subparsers.add_parser(
+        "install",
+        help="One-time system install: adds to PATH, enables MCP across detected IDEs, sets up slash commands",
+    )
+    install_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Configure for all supported IDEs even if not currently detected on system",
+    )
+
+    # Subcommand: on
     on_parser = subparsers.add_parser(
-        "on", aliases=["enable"], help="Activate TokenJar for current project (or use --global for all IDEs)"
+        "on", help="Activate TokenJar in current project (creates/updates AGENTS.md rules)"
     )
     on_parser.add_argument(
         "-g",
@@ -88,11 +99,9 @@ def main() -> None:
         help="Configure MCP server globally in all detected IDEs without modifying project files",
     )
 
-    # Subcommand: off / disable
+    # Subcommand: off
     off_parser = subparsers.add_parser(
-        "off",
-        aliases=["disable"],
-        help="Deactivate TokenJar for current project (or use --global to uninstall from IDEs)",
+        "off", help="Deactivate TokenJar in current project (cleans AGENTS.md rules)"
     )
     off_parser.add_argument(
         "-g",
@@ -102,21 +111,23 @@ def main() -> None:
         help="Uninstall TokenJar MCP configuration globally from all IDEs",
     )
 
-    # Subcommand: install-mcp
-    install_mcp_parser = subparsers.add_parser(
-        "install-mcp",
-        help="Configure TokenJar MCP server in Claude Desktop, Cursor, Windsurf, VS Code with safe backup",
+    # Subcommand: enable
+    enable_parser = subparsers.add_parser(
+        "enable",
+        aliases=["enable-mcp", "install-mcp"],
+        help="Enable TokenJar MCP server in all detected AI assistants globally",
     )
-    install_mcp_parser.add_argument(
+    enable_parser.add_argument(
         "--all",
         action="store_true",
         help="Configure for all supported IDEs even if not currently detected on system",
     )
 
-    # Subcommand: uninstall-mcp
+    # Subcommand: disable
     subparsers.add_parser(
-        "uninstall-mcp",
-        help="Safely remove TokenJar MCP configuration and restore exact original state from backup",
+        "disable",
+        aliases=["disable-mcp", "uninstall-mcp"],
+        help="Disable TokenJar MCP server from all AI assistants globally",
     )
 
     # Subcommand: ui
@@ -395,72 +406,91 @@ def main() -> None:
         if not success:
             sys.exit(1)
 
-    elif args.subcommand in ("on", "enable"):
+    elif args.subcommand == "install":
+        from tokenjar.hooks.manager import HookManager
+
+        print("=" * 60)
+        print("📦 TOKENJAR AUTOMATIC SYSTEM INSTALLER")
+        print("=" * 60)
+        path_ok, path_msg = HookManager.ensure_in_user_path()
+        if path_ok:
+            print(f"  🟢 System PATH: {path_msg}")
+        else:
+            print(f"  ⚠️ System PATH: {path_msg}")
+
+        print("\n🔌 Activating TokenJar MCP across AI assistants...")
+        results = HookManager.enable_all(only_installed=not getattr(args, "all", False))
+        for name, ok, msg in results:
+            status = "⚪" if "skipped" in msg.lower() else ("🟢" if ok else "❌")
+            print(f"  {status} {name}: {msg}")
+
+        HookManager.install_all_slash_commands(only_installed=True)
+        print("  🟢 Slash Commands: Configured /tokenjar in Antigravity and Claude Code")
+        print("\n✨ TokenJar has been successfully installed & activated globally!")
+        print("💡 To activate in any project and generate AGENTS.md, run:")
+        print("     tokenjar on")
+        print("=" * 60)
+
+    elif args.subcommand in ("enable", "enable-mcp", "install-mcp"):
+        from tokenjar.hooks.manager import HookManager
+
+        print("🔌 Activating TokenJar MCP across AI assistants...")
+        results = HookManager.enable_all(only_installed=not getattr(args, "all", False))
+        for name, ok, msg in results:
+            status = "⚪" if "skipped" in msg.lower() else ("🟢" if ok else "❌")
+            print(f"  {status} {name}: {msg}")
+        print("\n✨ TokenJar MCP is now ACTIVE across detected IDEs!")
+        print("💡 Run 'tokenjar on' in your project to inject AGENTS.md rules.")
+
+    elif args.subcommand in ("disable", "disable-mcp", "uninstall-mcp"):
+        from tokenjar.hooks.manager import HookManager
+
+        print("🔌 Deactivating TokenJar MCP globally from all AI assistants...")
+        results = HookManager.disable_all()
+        for name, ok, msg in results:
+            status = "⚪" if "skipped" in msg.lower() else ("🔴" if ok else "❌")
+            print(f"  {status} {name}: {msg}")
+        print("\n⚪ TokenJar MCP has been deactivated globally.")
+
+    elif args.subcommand == "on":
         from tokenjar.hooks.manager import HookManager
         from tokenjar.rules.manager import RulesManager
 
         if getattr(args, "global_scope", False):
             results = HookManager.enable_all()
             for name, ok, msg in results:
-                if "skipped" in msg.lower():
-                    status = "⚪"
-                else:
-                    status = "🟢" if ok else "❌"
-                print(f"{status} {name}: {msg}")
-            print("\n✨ TokenJar is now GLOBALLY ACTIVE across detected IDEs!")
-            print("💡 Projects remain clean by default. To enable for a specific project, run:")
-            print("     tokenjar on")
+                status = "⚪" if "skipped" in msg.lower() else ("🟢" if ok else "❌")
+                print(f"  {status} {name}: {msg}")
+            print("\n✨ TokenJar MCP is now GLOBALLY ACTIVE across detected IDEs!")
+            print("💡 To enable for a specific project, run: tokenjar on")
         else:
-            # Local on
             HookManager.enable_all()
+            print("📝 Generating TokenJar rules (AGENTS.md) in current project...")
             rule_results = RulesManager.install_rules(".")
             for name, ok, msg in rule_results:
-                print(f"🟢 Rules: {msg}")
+                icon = "🟢" if ok else "❌"
+                print(f"  {icon} {name}: {msg}")
             print("\n✨ TokenJar is now ACTIVE for this project!")
-            print("💡 Other projects remain unaffected unless explicitly enabled.")
+            print("🤖 AGENTS.md rule file is ready for AI coding assistants.")
 
-    elif args.subcommand in ("off", "disable"):
+    elif args.subcommand == "off":
         from tokenjar.hooks.manager import HookManager
         from tokenjar.rules.manager import RulesManager
 
         if getattr(args, "global_scope", False):
             results = HookManager.disable_all()
             for name, ok, msg in results:
-                if "skipped" in msg.lower():
-                    status = "⚪"
-                else:
-                    status = "🔴" if ok else "❌"
-                print(f"{status} {name}: {msg}")
-            print("\n⚪ TokenJar has been deactivated globally across all IDEs.")
+                status = "⚪" if "skipped" in msg.lower() else ("🔴" if ok else "❌")
+                print(f"  {status} {name}: {msg}")
+            print("\n⚪ TokenJar MCP has been deactivated globally across all IDEs.")
         else:
+            print("📝 Cleaning TokenJar rules from current project...")
             rule_results = RulesManager.remove_rules(".")
             for name, ok, msg in rule_results:
-                print(f"🔴 Rules: {msg}")
+                print(f"  🔴 {name}: {msg}")
             print("\n⚪ TokenJar has been deactivated for THIS project.")
             print("💡 Global MCP and other projects remain active and unaffected.")
-            print("   (To remove globally from all IDEs, run: tokenjar off --global)")
-
-    elif args.subcommand in ("install-mcp", "enable-mcp"):
-        from tokenjar.hooks.manager import HookManager
-
-        results = HookManager.enable_all(only_installed=not getattr(args, "all", False))
-        for name, ok, msg in results:
-            if "skipped" in msg.lower():
-                status = "⚪"
-            else:
-                status = "🟢" if ok else "❌"
-            print(f"{status} {name}: {msg}")
-
-    elif args.subcommand in ("uninstall-mcp", "disable-mcp"):
-        from tokenjar.hooks.manager import HookManager
-
-        results = HookManager.disable_all()
-        for name, ok, msg in results:
-            if "skipped" in msg.lower():
-                status = "⚪"
-            else:
-                status = "🔴" if ok else "❌"
-            print(f"{status} {name}: {msg}")
+            print("   (To remove globally from all IDEs, run: tokenjar disable)")
 
     elif args.subcommand in ("setup-commands", "install-commands"):
         from tokenjar.hooks.manager import HookManager
