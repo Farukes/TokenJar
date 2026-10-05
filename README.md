@@ -150,13 +150,16 @@ Empirical results from our rigorous **100-Step Real-Life Developer Stress Test**
 
 ---
 
-### Auto-Configure Agent Steering Rules
+### 📝 Project Steering Rules (`AGENTS.md`)
 
-Automatically inject TokenJar optimization instructions into your repository rules:
+Inject or remove TokenJar AI steering instructions into your repository rules:
 
 ```bash
-# Injects rules into AGENTS.md, .cursorrules, .windsurfrules, and CLAUDE.md
-tokenjar init-rules
+# 🟢 Activate TokenJar in current project (creates/updates AGENTS.md, .cursorrules)
+tokenjar on
+
+# ⚪ Deactivate TokenJar in current project (cleanly removes TokenJar block)
+tokenjar off
 ```
 
 ### 🎛️ Output Optimization Controls (CLI & Terminals)
@@ -182,14 +185,18 @@ Slash commands are also supported in your AI assistant chat (`/tokenjar output o
 
 ### ⚡ 1-Click Automatic Setup (Recommended)
 
-Automatically detects and configures TokenJar MCP server in Claude Desktop, Cursor, Windsurf, Claude Code, and VS Code with automated backups:
+Automatically detects and configures TokenJar MCP server across Claude Desktop, Cursor, Antigravity, Windsurf, Claude Code, and VS Code:
 
 ```bash
-# 🟢 Configure all detected IDEs in one command
-tokenjar install-mcp
+# 📦 One-time setup: adds to PATH, enables MCP in all IDEs, installs slash commands
+tokenjar install
 
-# ⚪ Cleanly revert at any time (preserves all other servers you added!)
-tokenjar uninstall-mcp
+# 🟢 Turn on TokenJar in your current project (generates AGENTS.md)
+tokenjar on
+
+# 🌐 Or enable/disable MCP server globally across all detected IDEs
+tokenjar enable
+tokenjar disable
 ```
 
 ### Manual Configuration
@@ -316,70 +323,43 @@ default_budget = 1000
 TokenJar also functions as an interactive command-line utility for human developers and local shell automation:
 
 ```bash
-# 🎨 Launch On-Demand Control Dashboard (Zero Background RAM UI)
-tokenjar ui
+# 📦 1-Click System Setup & Integrations
+tokenjar install            # One-time setup: adds to PATH, enables MCP across detected IDEs, sets up slash commands
+tokenjar on                 # Turn on TokenJar in current project (creates/updates AGENTS.md rules)
+tokenjar off                # Turn off TokenJar in current project (cleans AGENTS.md rules)
+tokenjar on --global        # Configure MCP server globally across all detected IDEs
+tokenjar off --global       # Uninstall MCP server globally from all detected IDEs
+tokenjar enable             # Enable TokenJar MCP server in all detected AI assistants globally
+tokenjar disable            # Disable TokenJar MCP server from all AI assistants globally
 
-# 📊 Check comprehensive live operational status of TokenJar across IDEs
-tokenjar status
+# 📊 Monitoring, Telemetry & Web Dashboard
+tokenjar status             # Check operational status across AI assistants and IDEs
+tokenjar stats              # View live performance, token reduction, and financial savings dashboard
+tokenjar ui                 # Launch the interactive Web Dashboard in your browser (Zero Background RAM)
+tokenjar ui --port 4141     # Specify custom port for Web Dashboard
 
-# ⚡ 1-Click auto-configure MCP across Claude Desktop, Cursor, Windsurf, VS Code
-tokenjar install-mcp
+# 🔄 Automatic Updates & Self-Healing
+tokenjar update             # Upgrade binary + auto-sync IDE configs + slash commands + project rules
+tokenjar update --force     # Force re-installation even if already on latest version
 
-# ⚪ Safely remove TokenJar MCP configuration and restore exact original state
-tokenjar uninstall-mcp
+# 🧹 Cache & Telemetry Management
+tokenjar clean              # Reset telemetry statistics and clear L2 SQLite cache
+tokenjar clean --cache      # Only clear L2 SQLite cache
+tokenjar clean --stats      # Only reset telemetry statistics
+tokenjar cache-prune --ttl-days 30 --max-entries 5000 # Prune expired or excess entries from L2 SQLite cache
 
-# View cumulative savings dashboard (tokens saved, money saved, operations)
-tokenjar stats
+# ⚡ Developer Tools & Output Pruning
+tokenjar run "pytest"       # Run shell command with intelligent token-saving output pruning
+tokenjar run "npm test"     # Retains errors & summary, prunes repetitive logs
+RAW=1 tokenjar run "pytest" # Temporary raw bypass (or pass --raw)
+tokenjar hook               # Install transparent CLI interceptor hooks into shell profiles (PowerShell/Bash)
+tokenjar unhook             # Remove transparent CLI interceptor hooks from shell profiles
+tokenjar output on          # Enable compact surgical diffs & zero-truncation mode
+tokenjar output off         # Revert AI assistant to default unrestricted output
 
-# Run any shell command through intelligent filtering
-tokenjar run "pytest tests/ -v"
-tokenjar run "npm test"
-
-# Temporary bypass: see 100% of raw output when you need full logs
-RAW=1 tokenjar run "pytest"
-tokenjar run "pytest --raw"
-
-# Prune expired or excess entries from L2 SQLite cache
-tokenjar cache-prune --ttl-days 30 --max-entries 5000
-
-# Install transparent shell hooks (so pytest/npm are automatically filtered)
-tokenjar hook
-
-# Cleanly and safely uninstall all shell hooks
-tokenjar unhook
-
-# 🟢 Enable TokenJar for THIS project (default)
-tokenjar on
-
-# ⚪ Disable TokenJar for THIS project (keeps other projects active)
-tokenjar off
-
-# 🌐 Enable TokenJar MCP globally across all detected IDEs
-tokenjar on --global
-
-# 🔴 Disable TokenJar MCP globally and cleanly revert IDE settings
-tokenjar off --global
-
-# 📝 Alias: Inject steering rules into the current project
-tokenjar init
-tokenjar init --clean
-
-# 🎨 Open interactive Web Dashboard (Zero Background RAM)
-tokenjar ui
-
-# 🧹 Completely clear L2 SQLite cache
-tokenjar cache-clear
-
-# ⚠️ Completely uninstall TokenJar from host (IDEs, project rules, hooks, cache, and PATH)
-tokenjar uninstall
-# or skip confirmation prompt:
-tokenjar uninstall --yes
-
-# Install /tokenjar slash commands for AGY CLI and Claude Code
-tokenjar setup-commands
-
-# Reset metrics counter
-tokenjar reset-stats
+# ⚠️ Zero-Trace Surgical Uninstall
+tokenjar uninstall          # Safely revert IDE configs, clean project rules, purge cache, hooks, and PATH
+tokenjar uninstall --yes    # Skip confirmation prompt and purge immediately
 ```
 
 ---
@@ -449,10 +429,10 @@ TokenJar maintains dual test suites ensuring 100% parity across both implementat
 ```bash
 # Python (Community Edition & MCP SDK)
 pip install -e ".[dev]"
-pytest tests/ -v           # 65 tests passing
+pytest tests/ -v           # 72 tests passing (100% pass)
 
 # Rust (Enterprise Native Engine)
-cargo test --workspace    # 35 tests passing
+cargo test --workspace    # 45 core tests + 3 benchmark/stress suites passing (100% pass)
 ```
 
 ---

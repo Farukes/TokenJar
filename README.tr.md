@@ -150,13 +150,16 @@ cargo install tokenjar --force
 
 ---
 
-### Yönlendirme Kurallarını Otomatik Yapılandırma
+### 📝 Proje Yönlendirme Kuralları (`AGENTS.md`)
 
-TokenJar optimizasyon yönergelerini depo kurallarınıza otomatik olarak ekleyin:
+TokenJar yapay zeka optimizasyon yönergelerini depo kurallarınıza ekleyin veya kaldırın:
 
 ```bash
-# Kuralları AGENTS.md, .cursorrules, .windsurfrules ve CLAUDE.md dosyalarına enjekte eder
-tokenjar init-rules
+# 🟢 TokenJar'ı mevcut projede etkinleştirir (AGENTS.md, .cursorrules oluşturur/günceller)
+tokenjar on
+
+# ⚪ TokenJar'ı mevcut projeden temizler (TokenJar bloğunu güvenle söker)
+tokenjar off
 ```
 
 ### 🎛️ Çıktı Optimizasyonu Kontrolleri (CLI ve Terminaller)
@@ -182,14 +185,18 @@ Yapay zeka asistanınızın sohbet ekranında slash komutları da desteklenir (`
 
 ### ⚡ Tek Tıkla Otomatik Kurulum (Önerilen)
 
-Claude Desktop, Cursor, Windsurf, Claude Code ve VS Code ortamlarını otomatik olarak algılar ve otomatik yedeklemeyle TokenJar MCP sunucusunu yapılandırır:
+Claude Desktop, Cursor, Antigravity, Windsurf, Claude Code ve VS Code genelinde TokenJar MCP sunucusunu otomatik olarak algılar ve kurar:
 
 ```bash
-# 🟢 Algılanan tüm IDE'leri tek bir komutla yapılandırın
-tokenjar install-mcp
+# 📦 Tek seferlik kurulum: PATH'e ekler, IDE'lerde MCP'yi açar, slash komutlarını kurar
+tokenjar install
 
-# ⚪ İstediğiniz zaman güvenle geri alın (eklediğiniz diğer sunucuları aynen korur!)
-tokenjar uninstall-mcp
+# 🟢 Mevcut projede TokenJar'ı etkinleştirir (AGENTS.md üretir)
+tokenjar on
+
+# 🌐 Veya MCP sunucusunu algılanan tüm IDE'lerde genel olarak açıp kapatın
+tokenjar enable
+tokenjar disable
 ```
 
 ### Manuel Yapılandırma
@@ -316,70 +323,43 @@ default_budget = 1000
 TokenJar, geliştiriciler ve yerel kabuk otomasyonu için etkileşimli bir komut satırı aracı olarak da işlev görür:
 
 ```bash
-# 🎨 İsteğe Bağlı Kontrol Panelini Başlatın (Sıfır Arka Plan RAM Tüketimli UI)
-tokenjar ui
+# 📦 Tek Tıkla Sistem Kurulumu ve Entegrasyonlar
+tokenjar install            # Tek seferlik kurulum: PATH'e ekler, IDE'lerde MCP'yi açar, slash komutlarını kurar
+tokenjar on                 # TokenJar'ı mevcut projede etkinleştirir (AGENTS.md kurallarını üretir/günceller)
+tokenjar off                # TokenJar'ı mevcut projede kapatır (AGENTS.md kurallarını temizler)
+tokenjar on --global        # MCP sunucusunu algılanan tüm IDE'lerde genel olarak yapılandırır
+tokenjar off --global       # MCP sunucusunu algılanan tüm IDE'lerden genel olarak kaldırır
+tokenjar enable             # Algılanan tüm yapay zeka asistanlarında TokenJar MCP'yi açar
+tokenjar disable            # Algılanan tüm yapay zeka asistanlarında TokenJar MCP'yi kapatır
 
-# 📊 TokenJar'ın IDE'ler genelindeki kapsamlı canlı çalışma durumunu kontrol edin
-tokenjar status
+# 📊 İzleme, Telemetri ve Web Kontrol Paneli
+tokenjar status             # Yapay zeka asistanları ve IDE'ler genelindeki çalışma durumunu kontrol eder
+tokenjar stats              # Canlı performans, token tasarrufu ve finansal kazanç panelini görüntüler
+tokenjar ui                 # Etkileşimli Web Kontrol Panelini tarayıcınızda açar (Sıfır Arka Plan RAM)
+tokenjar ui --port 4141     # Web Kontrol Paneli için özel port belirtir
 
-# ⚡ Claude Desktop, Cursor, Windsurf, VS Code genelinde MCP'yi tek tıkla otomatik kurun
-tokenjar install-mcp
+# 🔄 Otomatik Güncelleme ve Kendini Onarma
+tokenjar update             # Binary + IDE ayarları + slash komutları + proje kurallarını tek komutla günceller
+tokenjar update --force     # En son sürümde olsa bile yeniden indirmeyi ve eşitlemeyi zorlar
 
-# ⚪ TokenJar MCP yapılandırmasını güvenle kaldırın ve orijinal durumuna geri getirin
-tokenjar uninstall-mcp
+# 🧹 Önbellek ve Telemetri Yönetimi
+tokenjar clean              # Telemetri istatistiklerini sıfırlar ve L2 SQLite önbelleğini temizler
+tokenjar clean --cache      # Yalnızca L2 SQLite önbelleğini temizler
+tokenjar clean --stats      # Yalnızca telemetri istatistiklerini sıfırlar
+tokenjar cache-prune --ttl-days 30 --max-entries 5000 # Süresi dolmuş veya fazla önbellek kayıtlarını temizler
 
-# Kümülatif tasarruf panelini görüntüleyin (tasarruf edilen token, para ve işlem sayısı)
-tokenjar stats
+# ⚡ Geliştirici Araçları ve Çıktı Budama
+tokenjar run "pytest"       # Kabuk komutunu akıllı token tasarruflu çıktı budama ile çalıştırır
+tokenjar run "npm test"     # Hataları ve özetleri korur, binlerce satırlık tekrarlı logları budar
+RAW=1 tokenjar run "pytest" # Geçici ham çıktı kuralı (veya --raw parametresi)
+tokenjar hook               # Şeffaf CLI yakalama kancalarını kabuk profiline ekler (PowerShell/Bash)
+tokenjar unhook             # Şeffaf CLI yakalama kancalarını kabuk profilinden kaldırır
+tokenjar output on          # Kompakt cerrahi diff ve sıfır kesinti modunu açar
+tokenjar output off         # Yapay zeka asistanını varsayılan sınırsız çıktıya döndürür
 
-# Herhangi bir kabuk komutunu akıllı filtreleme ile çalıştırın
-tokenjar run "pytest tests/ -v"
-tokenjar run "npm test"
-
-# Geçici devre dışı bırakma: tam günlüklere ihtiyaç duyduğunuzda ham çıktının %100'ünü görün
-RAW=1 tokenjar run "pytest"
-tokenjar run "pytest --raw"
-
-# L2 SQLite önbelleğindeki süresi dolmuş veya fazla kayıtları temizleyin
-tokenjar cache-prune --ttl-days 30 --max-entries 5000
-
-# Şeffaf kabuk kancalarını yükleyin (pytest/npm çıktıları otomatik filtrelenir)
-tokenjar hook
-
-# Tüm kabuk kancalarını güvenli ve temiz bir şekilde kaldırın
-tokenjar unhook
-
-# 🟢 TokenJar'ı BU proje için etkinleştirin (varsayılan)
-tokenjar on
-
-# ⚪ TokenJar'ı BU proje için devre dışı bırakın (diğer projeleri etkilemez)
-tokenjar off
-
-# 🌐 TokenJar MCP sunucusunu tüm IDE'lerde genel olarak etkinleştirin
-tokenjar on --global
-
-# 🔴 TokenJar MCP'yi tüm IDE'lerden genel olarak kaldırın ve ayarları geri alın
-tokenjar off --global
-
-# 📝 Alternatif Takma Ad: Mevcut projeye kural ekleme / temizleme
-tokenjar init
-tokenjar init --clean
-
-# 🎨 Etkileşimli Web Kontrol Panelini Başlatın (Sıfır Arka Plan RAM)
-tokenjar ui
-
-# 🧹 L2 SQLite Önbelleğini Tamamen Sıfırlayın
-tokenjar cache-clear
-
-# ⚠️ TokenJar'ı Bilgisayardan Tamamen Kaldırın (IDE'ler, kurallar, hook'lar, önbellek ve PATH)
-tokenjar uninstall
-# veya onay istemini atlayarak:
-tokenjar uninstall --yes
-
-# AGY CLI ve Claude Code için /tokenjar slash komutlarını kurun
-tokenjar setup-commands
-
-# Metrik sayaçlarını sıfırlayın
-tokenjar reset-stats
+# ⚠️ Sıfır Kalıntılı Cerrahi Kaldırma
+tokenjar uninstall          # IDE ayarlarını geri alır, kuralları temizler, önbelleği, hook'ları ve PATH'i siler
+tokenjar uninstall --yes    # Onay istemini atlayarak hemen kaldırır
 ```
 
 ---
@@ -449,10 +429,10 @@ TokenJar, her iki uygulamada da %100 işlevsel eşliği garanti eden çift test 
 ```bash
 # Python (Topluluk Sürümü & MCP SDK)
 pip install -e ".[dev]"
-pytest tests/ -v           # 65 test başarılı
+pytest tests/ -v           # 72 test başarılı (%100 geçer)
 
 # Rust (Kurumsal Yerel Motor)
-cargo test --workspace    # 35 test başarılı
+cargo test --workspace    # 45 çekirdek test + 3 benchmark/stres paketi başarılı (%100 geçer)
 ```
 
 ---
