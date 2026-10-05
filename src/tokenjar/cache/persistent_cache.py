@@ -52,17 +52,22 @@ class PersistentCache:
                 conn.execute(
                     """
                     CREATE TABLE IF NOT EXISTS symbol_index (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
                         project_root TEXT NOT NULL,
                         file_path TEXT NOT NULL,
-                        file_hash TEXT NOT NULL,
                         name TEXT NOT NULL,
                         kind TEXT NOT NULL,
                         line INTEGER NOT NULL,
                         signature TEXT NOT NULL,
-                        PRIMARY KEY (project_root, file_path, name, line)
+                        file_hash TEXT NOT NULL,
+                        mtime REAL NOT NULL DEFAULT 0.0
                     )
                     """
                 )
+                try:
+                    conn.execute("ALTER TABLE symbol_index ADD COLUMN mtime REAL DEFAULT 0.0")
+                except Exception:
+                    pass
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_symbol_project_name ON symbol_index(project_root, name);")
                 conn.execute(
                     "CREATE INDEX IF NOT EXISTS idx_symbol_project_file ON symbol_index(project_root, file_path);"
@@ -212,18 +217,19 @@ class PersistentCache:
                 for s in symbols:
                     conn.execute(
                         """
-                        INSERT OR REPLACE INTO symbol_index (
-                            project_root, file_path, file_hash, name, kind, line, signature
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO symbol_index (
+                            project_root, file_path, name, kind, line, signature, file_hash, mtime
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
                             project_root,
                             file_path,
-                            file_hash,
                             s.get("name", ""),
                             s.get("kind", ""),
                             s.get("line", 0),
                             s.get("signature", ""),
+                            file_hash,
+                            float(mtime),
                         ),
                     )
                 conn.execute(

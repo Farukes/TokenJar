@@ -61,8 +61,25 @@ enum Commands {
     #[command(alias = "disable-mcp")]
     Disable,
 
+    /// Reset telemetry metrics and clear L2 SQLite cache
+    #[command(alias = "clear")]
+    Clean {
+        /// Only clear L2 SQLite cache
+        #[arg(long)]
+        cache: bool,
+        /// Only reset telemetry statistics
+        #[arg(long)]
+        stats: bool,
+    },
+
+    /// Run a shell command with intelligent token-saving output pruning (e.g. tokenjar run pytest)
+    Run {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        command: Vec<String>,
+    },
+
     /// Inject TokenJar steering rules into project (AGENTS.md, .cursorrules)
-    #[command(alias = "init-rules", alias = "inject")]
+    #[command(hide = true, alias = "init-rules", alias = "inject")]
     Init {
         #[arg(short, long, default_value = ".")]
         dir: String,
@@ -139,15 +156,8 @@ enum Commands {
     #[command(hide = true)]
     Unhook,
 
-    /// Run a shell command with intelligent token-saving output pruning
-    #[command(hide = true)]
-    Run {
-        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
-        command: Vec<String>,
-    },
-
     /// Prune expired or excess entries from L2 SQLite cache
-    #[command(alias = "cache-clear", alias = "cache-reset")]
+    #[command(hide = true, alias = "cache-clear", alias = "cache-reset")]
     CachePrune {
         #[arg(long, default_value_t = 5000)]
         max_entries: usize,
@@ -245,10 +255,29 @@ async fn main() {
             println!("  tokenjar off          -> Deactivate TokenJar & clean AGENTS.md from project");
             println!("  tokenjar enable       -> Enable MCP server in all detected IDEs globally");
             println!("  tokenjar disable      -> Disable MCP server from all IDEs globally");
-            println!("  tokenjar ui           -> Open Web Dashboard in browser");
             println!("  tokenjar stats        -> View live token and financial savings");
             println!("  tokenjar status       -> Check operational status");
+            println!("  tokenjar clean        -> Reset telemetry metrics and clear L2 cache");
+            println!("  tokenjar ui           -> Open Web Dashboard in browser");
             println!("============================================================");
+        }
+        Some(Commands::Clean { cache, stats }) => {
+            let clear_all = !(*cache) && !(*stats);
+            println!("🧹 Cleaning TokenJar cache and metrics...");
+            if clear_all || *stats {
+                tracker.reset();
+                println!("  🟢 Telemetry: Statistics and savings counters reset to zero.");
+            }
+            if clear_all || *cache {
+                if let Some(home) = dirs::home_dir() {
+                    let db_path = home.join(".tokenjar").join("cache.db");
+                    if db_path.exists() {
+                        let _ = std::fs::remove_file(&db_path);
+                    }
+                }
+                println!("  🟢 Cache: L2 SQLite cache completely cleared.");
+            }
+            println!("✨ Clean complete.");
         }
         Some(Commands::Install { all }) => {
             println!("============================================================");

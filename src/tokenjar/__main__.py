@@ -41,7 +41,7 @@ def main() -> None:
     subparsers.add_parser("version", help="Show program's version number and exit")
 
     # Subcommand: server (default if no args)
-    subparsers.add_parser("server", help="Start the MCP server (stdio transport)")
+    subparsers.add_parser("server")
 
     # Subcommand: stats
     subparsers.add_parser("stats", help="Display cumulative token and financial savings dashboard")
@@ -57,15 +57,15 @@ def main() -> None:
         help="Target project directory to check rules for (default: current directory)",
     )
 
-    # Subcommand: reset-stats
-    subparsers.add_parser("reset-stats", help="Reset cumulative telemetry metrics")
+    # Subcommand: reset-stats (legacy alias -> tokenjar clean --stats)
+    subparsers.add_parser("reset-stats")
 
     # Subcommand: run
     run_parser = subparsers.add_parser("run", help="Execute a shell command with intelligent output filtering")
     run_parser.add_argument("command", nargs=argparse.REMAINDER, help="The command to execute (e.g. pytest, npm test)")
 
-    # Subcommand: hook
-    hook_parser = subparsers.add_parser("hook", help="Install non-intrusive transparent shell hooks")
+    # Subcommand: hook (internal)
+    hook_parser = subparsers.add_parser("hook")
     hook_parser.add_argument(
         "--shell",
         choices=["auto", "powershell", "bash"],
@@ -73,8 +73,8 @@ def main() -> None:
         help="Target shell environment (default: auto)",
     )
 
-    # Subcommand: unhook
-    subparsers.add_parser("unhook", help="Safely remove all installed shell hooks")
+    # Subcommand: unhook (internal)
+    subparsers.add_parser("unhook")
 
     # Subcommand: install
     install_parser = subparsers.add_parser(
@@ -130,6 +130,23 @@ def main() -> None:
         help="Disable TokenJar MCP server from all AI assistants globally",
     )
 
+    # Subcommand: clean / clear
+    clean_parser = subparsers.add_parser(
+        "clean",
+        aliases=["clear"],
+        help="Reset telemetry metrics and clear L2 SQLite cache",
+    )
+    clean_parser.add_argument(
+        "--cache",
+        action="store_true",
+        help="Only clear L2 SQLite cache",
+    )
+    clean_parser.add_argument(
+        "--stats",
+        action="store_true",
+        help="Only reset telemetry statistics",
+    )
+
     # Subcommand: ui
     ui_parser = subparsers.add_parser(
         "ui",
@@ -147,17 +164,11 @@ def main() -> None:
         help="Do not automatically open the browser or native app window",
     )
 
-    # Subcommand: setup-commands
-    subparsers.add_parser(
-        "setup-commands",
-        help="Install /tokenjar slash command definitions across AGY CLI and Claude Code",
-    )
+    # Subcommand: setup-commands (legacy alias -> tokenjar install)
+    subparsers.add_parser("setup-commands")
 
-    # Subcommand: output (toggle compact output on/off/status)
-    output_parser = subparsers.add_parser(
-        "output",
-        help="Manage AI output mode: 'tokenjar output on' or 'tokenjar output off'",
-    )
+    # Subcommand: output (legacy alias -> tokenjar on / off)
+    output_parser = subparsers.add_parser("output")
     output_parser.add_argument(
         "state",
         nargs="?",
@@ -171,11 +182,10 @@ def main() -> None:
         help="Target project directory (default: current directory)",
     )
 
-    # Subcommand: init / init-rules
+    # Subcommand: init / init-rules (legacy alias -> tokenjar on / off)
     rules_parser = subparsers.add_parser(
         "init",
         aliases=["init-rules"],
-        help="Install agent steering rules into AGENTS.md, .cursorrules, .windsurfrules, and CLAUDE.md",
     )
     rules_parser.add_argument(
         "--path",
@@ -206,11 +216,10 @@ def main() -> None:
         help="Clean steering rules from target project directory instead of installing",
     )
 
-    # Subcommand: cache-prune / cache-clear / cache-reset
+    # Subcommand: cache-prune / cache-clear / cache-reset (legacy alias -> tokenjar clean)
     prune_parser = subparsers.add_parser(
         "cache-prune",
         aliases=["cache-clear", "cache-reset"],
-        help="Prune expired entries or completely reset L2 SQLite cache",
     )
     prune_parser.add_argument(
         "--all",
@@ -364,13 +373,15 @@ def main() -> None:
 
         print("=" * 60)
         print("Useful Commands:")
-        print("  tokenjar on           -> Enable TokenJar for THIS project")
-        print("  tokenjar off          -> Disable TokenJar for THIS project")
-        print("  tokenjar on --global  -> Enable MCP across all IDEs globally")
-        print("  tokenjar off --global -> Disable MCP across all IDEs globally")
-        print("  tokenjar ui           -> Open Web Dashboard in browser")
+        print("  tokenjar install      -> One-time setup: adds to PATH & enables IDE MCP")
+        print("  tokenjar on           -> Activate TokenJar & generate AGENTS.md in project")
+        print("  tokenjar off          -> Deactivate TokenJar & clean AGENTS.md from project")
+        print("  tokenjar enable       -> Enable MCP server in all detected IDEs globally")
+        print("  tokenjar disable      -> Disable MCP server from all IDEs globally")
         print("  tokenjar stats        -> View live token and financial savings")
         print("  tokenjar status       -> Check operational status")
+        print("  tokenjar clean        -> Reset telemetry metrics and clear L2 cache")
+        print("  tokenjar ui           -> Open Web Dashboard in browser")
         print("=" * 60)
         if not overall_active:
             sys.exit(1)
@@ -451,6 +462,23 @@ def main() -> None:
             status = "⚪" if "skipped" in msg.lower() else ("🔴" if ok else "❌")
             print(f"  {status} {name}: {msg}")
         print("\n⚪ TokenJar MCP has been deactivated globally.")
+
+    elif args.subcommand in ("clean", "clear"):
+        clear_all = not getattr(args, "cache", False) and not getattr(args, "stats", False)
+        print("🧹 Cleaning TokenJar cache and metrics...")
+        if clear_all or getattr(args, "stats", False):
+            from tokenjar.telemetry.stats import tracker
+
+            tracker.reset()
+            print("  🟢 Telemetry: Statistics and savings counters reset to zero.")
+        if clear_all or getattr(args, "cache", False):
+            from tokenjar.cache.persistent_cache import PersistentCache
+
+            p = PersistentCache()
+            before = p.count_entries()
+            p.clear()
+            print(f"  🟢 Cache: L2 SQLite cache completely cleared ({before} entries removed).")
+        print("✨ Clean complete.")
 
     elif args.subcommand == "on":
         from tokenjar.hooks.manager import HookManager
