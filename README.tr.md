@@ -12,12 +12,12 @@
 [![Release: v1.1.0](https://img.shields.io/badge/S%C3%BCr%C3%BCm-v1.1.0%20GA-green.svg)](https://github.com/Farukes/TokenJar/releases/latest)
 [![CI](https://github.com/Farukes/TokenJar/actions/workflows/ci.yml/badge.svg)](https://github.com/Farukes/TokenJar/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/downloads/)
-[![Kurumsal Yerel Motor: Rust](https://img.shields.io/badge/Kurumsal%20Yerel%20Motor-Rust%20v1.1.0-orange.svg)](#-kurumsal-ve-y%C3%BCksek-performansl%C4%B1-yerel-motor-rust-s%C3%BCr%C3%BCm%C3%BC)
+[![Kurumsal Yerel Motor: Rust](https://img.shields.io/badge/Kurumsal%20Yerel%20Motor-Rust%20v1.1.0-orange.svg)](#kurumsal-motor)
 [![Crates.io: v1.1.0](https://img.shields.io/badge/crates.io-v1.1.0-orange.svg?logo=rust&logoColor=white)](https://crates.io/crates/tokenjar)
 [![PyPI: v1.1.0](https://img.shields.io/badge/PyPI-v1.1.0-blue.svg?logo=pypi&logoColor=white)](https://pypi.org/project/tokenjar/)
-[![Token Tasarrufu](https://img.shields.io/badge/Token%20Tasarrufu-%2590%20ile%20%2599-brightgreen.svg)](#-kan%C4%B1tlanm%C4%B1%C5%9F-performans-ve-stres-testi-sonu%C3%A7lar%C4%B1)
+[![Token Tasarrufu](https://img.shields.io/badge/Token%20Tasarrufu-%2590%20ile%20%2599-brightgreen.svg)](#performans-testleri)
 [![Lisans: BSL 1.1](https://img.shields.io/badge/Lisans-BSL%201.1-blue.svg)](LICENSE)
-[![Zero Telemetry](https://img.shields.io/badge/telemetri-0%25%20(100%25%20yerel)-success.svg)](#-kurumsal-gizlilik-ve-g%C3%BCvenlik-garantisi)
+[![Zero Telemetry](https://img.shields.io/badge/telemetri-0%25%20--%20%25100%20yerel-success.svg)](#gizlilik-garantisi)
 
 **Yapay zeka kodlama asistanları için işlevsellikten ödün vermeden %70-95 token tasarrufu sağlayan MCP sunucusu.**
 
@@ -51,15 +51,15 @@ TokenJar, yapay zeka kodlama asistanınız ile kod tabanınız arasında yer ala
 
 ---
 
-## 🚀 Hızlı Başlangıç ve Kurulum (v1.0.3 GA)
+## 🚀 Hızlı Başlangıç ve Kurulum (v1.1.0 GA)
 
 TokenJar iki resmi sürüm halinde dağıtılmaktadır:
 1. **🦀 Rust Yerel Motoru (Önerilen):** Mikrosaniyelik AST ayrıştırma, 14 MB RAM ve sıfır Python bağımlılığı içeren yüksek performanslı tekil ikili dosya.
 2. **🐍 Python Sürümü:** pip ve sanal ortamlar (venv) için saf Python FastMCP paketi.
 
-### 📥 Doğrudan İndirme Bağlantıları (Derlenmiş v1.0.3 İkili Dosyaları)
+### 📥 Doğrudan İndirme Bağlantıları (Derlenmiş v1.1.0 İkili Dosyaları)
 
-İşletim sisteminize tıklayarak en güncel v1.0.3 sürümünü anında indirin:
+İşletim sisteminize tıklayarak en güncel v1.1.0 sürümünü anında indirin:
 
 | Platform | Mimari | Tıkla ve İndir | Format |
 |:---|:---|:---|:---|
@@ -133,11 +133,12 @@ cargo install tokenjar --force
 
 ---
 
+<a id="performans-testleri"></a>
 ## 📊 Kanıtlanmış Performans ve Stres Testi Sonuçları
 
 100 adımlık gerçek geliştirici stres testi ve 50 döngülük eşit şartlardaki MCP testinden elde edilen net ölçüm sonuçları:
 
-| Metrik | 1. Düz AI (TokenJar Yok) | 2. TokenJar Python | 3. TokenJar Rust (v1.0.3) | Rust Avantajı |
+| Metrik | 1. Düz AI (TokenJar Yok) | 2. TokenJar Python | 3. TokenJar Rust (v1.1.0) | Rust Avantajı |
 |:---|:---|:---|:---|:---|
 | **Tüketilen Token (100 Adım)** | 622.892 tokens | 95.492 tokens | **68.641 tokens** | **%89.0 net tasarruf (554k token kurtarıldı)** |
 | **Uçtan Uca Kodlama Tasarrufu** | 166.513 tokens | 12.400 tokens | **6.585 tokens** | **🚀 %96.0 net tasarruf (Cerrahi bloklar)** |
@@ -277,11 +278,11 @@ mcpServers:
 
 ## 🛠️ Kullanılabilir MCP Araçları
 
-- **`find_symbol_global(query, root_path=".", exact=False)`**: Birden fazla dosyayı okumaya gerek kalmadan kod tabanının tamamında fonksiyon, metot veya sınıfları isme göre arar.
+- **`find_symbol_global(query, root_path=".", exact=False)`**: Birden fazla dosyayı okumaya gerek kalmadan kod tabanının tamamında fonksiyon, metot veya sınıfları isme göre arar. Yazım hatalarına toleranslı arama için Levenshtein mesafesi geri dönüşlü hibrit bulanık (fuzzy) eşleştirme içerir.
 - **`find_symbol_references(symbol_name, root_path=".", max_results=25)`**: Etki alanı (blast radius) referans analizi. Kod düzenlemeden veya yeniden yapılandırmadan (refactor) önce kod tabanındaki tüm çağıranları, import'ları ve kullanımları bulur.
 - **`tool_get_code_skeleton(file_path)`**: Bir dosyanın yapısal iskeletini çıkarır — sınıflar, fonksiyon imzaları, docstring'ler ve tip açıklamaları korunur, gövdeler `...` ile değiştirilir. (Python, JS/TS, Go, Rust, Java, C/C++, C#, Ruby, PHP, Kotlin dillerini destekler).
 - **`tool_get_symbol(file_path, symbol_name)`**: İskeleti inceledikten sonra belirli bir sınıf veya fonksiyonun tam uygulamasını isme göre getirir.
-- **`read_file_smart(file_path, force_full=False, query="", start_line=None, end_line=None)`**: Oturum önbelleği, cerrahi satır dilimleme ve Kilit Dosyası Kalkanı (Lockfile Shield) içeren diferansiyel dosya okuyucu. Devasa dosyaları tamamen bağlama yüklemek yerine satır numaralarıyla hedeflenen aralığı incelemek için `start_line` ve `end_line` (1-indeksli, dahilî) parametrelerini destekler. Değişmeyen dosyalarda `[CACHED] unchanged` (~3 token) veya birleşik diff döndürür. Kilit dosyaları (`package-lock.json`, `Cargo.lock` vb.) için 50.000 satır yerine cerrahi 5 satırlık sürüm blokları almak için `query="paket-adi"` parametresini destekler.
+- **`read_file_smart(file_path, symbol=None, force_full=False, query="", start_line=None, end_line=None)`**: Oturum önbelleği, cerrahi satır dilimleme, sembol çıkarımı ve Kilit Dosyası Kalkanı (Lockfile Shield) içeren diferansiyel dosya okuyucu. Tüm dosyayı okumadan sembolü doğrudan tek adımda çıkarmak için `symbol="fonksiyon_adi"` parametresini destekler. Satır numaralarıyla hedeflenen aralığı incelemek için `start_line` ve `end_line` (1-indeksli, dahilî) parametrelerini destekler ve otomatik sayfalama tavanı (`MAX_OUTPUT_LINES = 80`) uygular. Değişmeyen dosyalarda `[CACHED] unchanged` (~3 token) veya birleşik diff döndürür. Kilit dosyaları (`package-lock.json`, `Cargo.lock` vb.) için 50.000 satır yerine cerrahi 5 satırlık sürüm blokları almak için `query="paket-adi"` parametresini destekler.
 - **`run_command_smart(command, cwd=".")`**: Kabuk komutlarını çalıştırır ve pytest, jest, npm, cargo ile git çıktılarındaki gereksiz ayrıntıları budar.
 - **`filter_output(output, output_type="auto")`**: Komut çalıştırmadan test çalıştırıcıları, derleme işlem hatları ve sürüm kontrol günlükleri için saf metin filtresi uygular.
 - **`get_repo_map_tool(root_path=".", max_tokens=1000)`**: Dosyalar arası import ilişkilerine göre önceliklendirilmiş graf merkeziliği kod tabanı haritası.
@@ -364,6 +365,7 @@ tokenjar uninstall --yes    # Onay istemini atlayarak hemen kaldırır
 
 ---
 
+<a id="gizlilik-garantisi"></a>
 ## 🔒 Kurumsal Gizlilik ve Güvenlik Garantisi
 
 TokenJar kesinlikle **Sıfır-Telemetri, %100 Localhost** tasarım felsefesiyle geliştirilmiştir:
@@ -371,11 +373,12 @@ TokenJar kesinlikle **Sıfır-Telemetri, %100 Localhost** tasarım felsefesiyle 
 - **%100 Yerel Yürütme:** Tüm ayrıştırma (Tree-sitter), önbellekleme (SQLite) ve çıktı filtreleme işlemleri yerel olarak işlemcinizde (CPU) gerçekleşir.
 - **Sıfır Dış Ağ Çağrısı:** Telemetri sunucusu, analitik izleyici, giden ping veya herhangi bir bulut bağımlılığı kesinlikle yoktur.
 - **Air-Gapped / Çevrimdışı Ortamlarla Uyumlu:** Gizli, çevrimdışı veya izole kurumsal şirket ağlarında güvenle çalışır.
-- **Yerel Veri İzolasyonu:** Kalıcı önbellek (`~/.tokenjar/cache.db`) ve istatistikler (`~/.tokenjar/telemetry.json`) yalnızca kullanıcı dizininizde bulunur ve `tokenjar reset-stats` ile veya dizin silinerek istenildiği zaman tamamen temizlenebilir.
+- **Yerel Veri İzolasyonu:** Kalıcı önbellek (`~/.tokenjar/cache.db`) ve istatistikler (`~/.tokenjar/telemetry.json`) yalnızca kullanıcı dizininizde bulunur ve `tokenjar clean --stats` ile veya dizin silinerek istenildiği zaman tamamen temizlenebilir.
 - **Müdahalesiz Mimari:** Yapay zeka asistanının açık talimatı olmadan proje kodunuzu asla değiştirmez.
 
 ---
 
+<a id="kurumsal-motor"></a>
 ## 🦀 Kurumsal ve Yüksek Performanslı Yerel Motor (Rust Sürümü)
 
 Kurumsal çalışma ortamları, devasa monorepolar (50.000+ dosya), CI/CD süreçleri veya sisteminde Python kurulu olmayan geliştiriciler için TokenJar, sıfır bağımlılıklı ve ultra hızlı yerel bir Rust ikili dosyası (`tokenjar.exe` / bağımsız binary) sunar.

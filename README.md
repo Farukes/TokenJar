@@ -12,12 +12,12 @@
 [![Release: v1.1.0](https://img.shields.io/badge/Release-v1.1.0%20GA-green.svg)](https://github.com/Farukes/TokenJar/releases/latest)
 [![CI](https://github.com/Farukes/TokenJar/actions/workflows/ci.yml/badge.svg)](https://github.com/Farukes/TokenJar/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/downloads/)
-[![Enterprise Native: Rust](https://img.shields.io/badge/Enterprise%20Native-Rust%20v1.1.0-orange.svg)](#-enterprise--high-performance-native-engine-rust-edition)
+[![Enterprise Native: Rust](https://img.shields.io/badge/Enterprise%20Native-Rust%20v1.1.0-orange.svg)](#enterprise-engine)
 [![Crates.io: v1.1.0](https://img.shields.io/badge/crates.io-v1.1.0-orange.svg?logo=rust&logoColor=white)](https://crates.io/crates/tokenjar)
 [![PyPI: v1.1.0](https://img.shields.io/badge/PyPI-v1.1.0-blue.svg?logo=pypi&logoColor=white)](https://pypi.org/project/tokenjar/)
-[![Token Reduction](https://img.shields.io/badge/Token%20Savings-90%25%20to%2099%25-brightgreen.svg)](#-proven-performance--stress-test-benchmark)
+[![Token Reduction](https://img.shields.io/badge/Token%20Savings-90%25%20to%2099%25-brightgreen.svg)](#benchmarks)
 [![License: BSL 1.1](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](LICENSE)
-[![Zero Telemetry](https://img.shields.io/badge/telemetry-0%25%20(100%25%20local)-success.svg)](#-enterprise-privacy--security-guarantee)
+[![Zero Telemetry](https://img.shields.io/badge/telemetry-0%25%20--%20100%25%20local-success.svg)](#privacy-guarantee)
 
 **MCP server that saves 70-95% tokens for AI coding assistants — without losing functionality.**
 
@@ -51,7 +51,7 @@ Works with **Claude Code**, **Cursor**, **Antigravity (AGY)**, **Windsurf**, **C
 
 ---
 
-## 🚀 Quick Start & Installation (v1.0.3 GA)
+## 🚀 Quick Start & Installation (v1.1.0 GA)
 
 TokenJar is distributed in two official editions:
 1. **🦀 Rust Native Engine (Recommended):** High-performance, self-contained single binary with microsecond AST, 14 MB RAM, and zero Python dependencies.
@@ -59,7 +59,7 @@ TokenJar is distributed in two official editions:
 
 ### 📥 1-Click Direct Downloads (Precompiled Binaries)
 
-Click your operating system below to download the latest v1.0.3 release:
+Click your operating system below to download the latest v1.1.0 release:
 
 | Platform | Architecture | Click to Download | Format |
 |:---|:---|:---|:---|
@@ -133,11 +133,12 @@ cargo install tokenjar --force
 
 ---
 
+<a id="benchmarks"></a>
 ## 📊 Proven Performance & Stress Test Benchmark
 
 Empirical results from our rigorous **100-Step Real-Life Developer Stress Test** and **50-Cycle MCP Head-to-Head Benchmark** comparing Standard Raw AI vs TokenJar Python vs TokenJar Rust Native Engine:
 
-| Metric | 1. Raw AI (No TokenJar) | 2. TokenJar Python | 3. TokenJar Rust (v1.0.3) | Rust Advantage |
+| Metric | 1. Raw AI (No TokenJar) | 2. TokenJar Python | 3. TokenJar Rust (v1.1.0) | Rust Advantage |
 |:---|:---|:---|:---|:---|
 | **Consumed Tokens (100 Steps)** | 622,892 tokens | 95,492 tokens | **68,641 tokens** | **89.0% net savings (554k tokens saved)** |
 | **End-to-End Coding Savings** | 166,513 tokens | 12,400 tokens | **6,585 tokens** | **🚀 96.0% net savings (Surgical edits)** |
@@ -277,11 +278,11 @@ mcpServers:
 
 ## 🛠️ Available MCP Tools
 
-- **`find_symbol_global(query, root_path=".", exact=False)`**: Search for functions, methods, or classes across the entire codebase by name without reading multiple files.
+- **`find_symbol_global(query, root_path=".", exact=False)`**: Search for functions, methods, or classes across the entire codebase by name without reading multiple files. Features hybrid fuzzy matching with Levenshtein distance fallback for typo-tolerant lookups.
 - **`find_symbol_references(symbol_name, root_path=".", max_results=25)`**: Blast radius reference analyzer. Finds all callers, imports, and usages across the entire codebase before editing or refactoring code.
 - **`tool_get_code_skeleton(file_path)`**: Extract structural skeleton of a file — classes, function signatures, docstrings, and type annotations with bodies replaced by `...`. (Supports Python, JS/TS, Go, Rust, Java, C/C++, C#, Ruby, PHP, Kotlin).
 - **`tool_get_symbol(file_path, symbol_name)`**: Extract the full implementation of a specific class or function by name after inspecting its skeleton.
-- **`read_file_smart(file_path, force_full=False, query="", start_line=None, end_line=None)`**: Differential file reader with session caching, targeted line range slicing, and Lockfile Shield. Supports `start_line` and `end_line` (1-indexed, inclusive) to surgically inspect specific line ranges with line numbers instead of loading entire large files. Returns `[CACHED] unchanged` (~3 tokens) or unified diffs on edits. For lockfiles (`package-lock.json`, `Cargo.lock`, etc.), pass `query="package-name"` for surgical 5-line version blocks instead of 50,000 lines.
+- **`read_file_smart(file_path, symbol=None, force_full=False, query="", start_line=None, end_line=None)`**: Differential file reader with session caching, targeted line range slicing, symbol extraction, and Lockfile Shield. Pass `symbol="function_name"` to extract symbols directly in 1 step. Supports `start_line` and `end_line` (1-indexed, inclusive) to surgically inspect specific line ranges with line numbers and enforces an auto-paging ceiling (`MAX_OUTPUT_LINES = 80`). Returns `[CACHED] unchanged` (~3 tokens) or unified diffs on edits. For lockfiles (`package-lock.json`, `Cargo.lock`, etc.), pass `query="package-name"` for surgical 5-line version blocks instead of 50,000 lines.
 - **`run_command_smart(command, cwd=".")`**: Executes shell commands and prunes verbose logs from pytest, jest, npm, cargo, and git.
 - **`filter_output(output, output_type="auto")`**: Pure text filter for test runners, build pipelines, and version control logs without executing commands.
 - **`get_repo_map_tool(root_path=".", max_tokens=1000)`**: Graph centrality codebase map prioritized by cross-file import relationships.
@@ -364,6 +365,7 @@ tokenjar uninstall --yes    # Skip confirmation prompt and purge immediately
 
 ---
 
+<a id="privacy-guarantee"></a>
 ## 🔒 Enterprise Privacy & Security Guarantee
 
 TokenJar is built strictly under a **Zero-Telemetry, 100% Localhost** design philosophy:
@@ -371,11 +373,12 @@ TokenJar is built strictly under a **Zero-Telemetry, 100% Localhost** design phi
 - **100% Local Execution:** All parsing (Tree-sitter), caching (SQLite), and output filtering happen locally in-process on your CPU.
 - **Zero External Network Calls:** No telemetry servers, no analytical trackers, no outbound pings, and no cloud dependencies whatsoever.
 - **Air-Gapped Compatible:** Safely operates in classified, offline, or air-gapped corporate enterprise environments.
-- **Local Data Isolation:** Persistent cache (`~/.tokenjar/cache.db`) and statistics (`~/.tokenjar/telemetry.json`) reside exclusively in your user directory and can be purged at any time with `tokenjar reset-stats` or by deleting the directory.
+- **Local Data Isolation:** Persistent cache (`~/.tokenjar/cache.db`) and statistics (`~/.tokenjar/telemetry.json`) reside exclusively in your user directory and can be purged at any time with `tokenjar clean --stats` or by deleting the directory.
 - **Non-Invasive Architecture:** Never modifies your project code without explicit assistant direction.
 
 ---
 
+<a id="enterprise-engine"></a>
 ## 🦀 Enterprise & High-Performance Native Engine (Rust Edition)
 
 For enterprise environments, massive monorepos (50,000+ files), CI/CD pipelines, or developer systems without a Python runtime, TokenJar provides an ultra-fast, zero-dependency native Rust binary (`tokenjar.exe` / standalone executable).
