@@ -641,7 +641,16 @@ npm() {{ if [ "$1" = "test" ]; then tokenjar run "npm $@"; else command npm "$@"
             except Exception as e:
                 results.append(("Antigravity (AGY)", False, f"Failed removing skill: {e}"))
 
-        # 2. Claude Code command
+        # 2. Antigravity MCP schemas
+        agy_schemas = home / ".gemini" / "antigravity-cli" / "mcp" / "tokenjar"
+        if agy_schemas.exists():
+            try:
+                import shutil
+                shutil.rmtree(agy_schemas, ignore_errors=True)
+            except Exception:
+                pass
+
+        # 3. Claude Code command
         claude_cmd = home / ".claude" / "commands" / "tokenjar.md"
         if claude_cmd.exists():
             try:

@@ -765,7 +765,17 @@ pub fn uninstall_all_slash_commands() -> Vec<(&'static str, bool, String)> {
         }
     }
 
-    // 2. Claude Code command
+    // 2. Antigravity MCP schemas
+    let agy_schemas = home
+        .join(".gemini")
+        .join("antigravity-cli")
+        .join("mcp")
+        .join("tokenjar");
+    if agy_schemas.exists() {
+        let _ = fs::remove_dir_all(&agy_schemas);
+    }
+
+    // 3. Claude Code command
     let claude_cmd = home.join(".claude").join("commands").join("tokenjar.md");
     if claude_cmd.exists() {
         match fs::remove_file(&claude_cmd) {
