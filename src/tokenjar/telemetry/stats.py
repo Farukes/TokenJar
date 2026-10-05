@@ -56,6 +56,7 @@ class TelemetryData:
 
     # Granular categories
     skeleton: CategoryStats = field(default_factory=CategoryStats)
+    slice: CategoryStats = field(default_factory=CategoryStats)
     cache: CategoryStats = field(default_factory=CategoryStats)
     repo_map: CategoryStats = field(default_factory=CategoryStats)
     command: CategoryStats = field(default_factory=CategoryStats)
@@ -67,6 +68,7 @@ class TelemetryData:
         # Calculate savings across operations that TokenJar actually optimized
         effective_original = (
             self.skeleton.original
+            + self.slice.original
             + self.cache.original
             + self.repo_map.original
             + self.command.original
@@ -75,6 +77,7 @@ class TelemetryData:
         )
         effective_saved = (
             self.skeleton.saved
+            + self.slice.saved
             + self.cache.saved
             + self.repo_map.saved
             + self.command.saved
@@ -148,12 +151,13 @@ class TelemetryTracker:
 
             # Reconstruct CategoryStats objects
             cats = {}
-            for cat in ("skeleton", "cache", "repo_map", "command", "symbol_search", "lockfile"):
+            for cat in ("skeleton", "slice", "cache", "repo_map", "command", "symbol_search", "lockfile"):
                 if cat in content and isinstance(content[cat], dict):
                     cats[cat] = CategoryStats(**content.pop(cat))
 
             # Remove obsolete fields if present
             content.pop("skeleton", None)
+            content.pop("slice", None)
             content.pop("cache", None)
             content.pop("repo_map", None)
             content.pop("command", None)
@@ -274,6 +278,7 @@ class TelemetryTracker:
             "│ 🔋 TOKENJAR DETAILED PERFORMANCE & SAVINGS DASHBOARD                │",
             "├────────────────────────────────────────────────────────────────────────┤",
             fmt_cat("AST Skeletonizer:", d.skeleton, "files"),
+            fmt_cat("Smart Line Slicer:", d.slice, "slices"),
             fmt_cat("Smart File Cache:", d.cache, "reads"),
             fmt_cat("Lockfile Shield:", d.lockfile, "shields"),
             fmt_cat("Repo Map Engine:", d.repo_map, "maps"),

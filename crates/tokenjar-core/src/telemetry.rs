@@ -158,6 +158,9 @@ impl TelemetryTracker {
             "symbol_search" => {
                 update_cat(&mut data_lock.symbol_search);
             }
+            "slice" => {
+                update_cat(&mut data_lock.slice);
+            }
             "lockfile" => {
                 update_cat(&mut data_lock.lockfile);
             }
@@ -234,6 +237,7 @@ impl TelemetryTracker {
              {}\n\
              {}\n\
              {}\n\
+             {}\n\
              ├────────────────────────────────────────────────────────────────────────┤\n\
              │  TOTAL TOKENS SAVED:       {:<16} ({pct} optimized reduction)│\n\
              │  ESTIMATED MONEY SAVED:    {:<16} (at $3.00/1M blended rate) │\n\
@@ -241,6 +245,7 @@ impl TelemetryTracker {
              │  L2 CACHE DISK USAGE:      {:<16} (SQLite WAL storage)       │\n\
              └────────────────────────────────────────────────────────────────────────┘",
             fmt_cat("AST Skeletonizer:", &d.skeleton, "files"),
+            fmt_cat("Smart Line Slicer:", &d.slice, "slices"),
             fmt_cat("Smart File Cache:", &d.cache, "reads"),
             fmt_cat("Lockfile Shield:", &d.lockfile, "shields"),
             fmt_cat("Repo Map Engine:", &d.repo_map, "maps"),
@@ -296,5 +301,23 @@ mod tests {
         assert!(dashboard.contains("TOKENJAR"));
         assert!(dashboard.contains("L2 CACHE DISK USAGE:"));
         assert!(dashboard.contains("SQLite WAL storage"));
+    }
+
+    #[test]
+    fn test_slice_category_recording_and_dashboard() {
+        let temp = tempfile::NamedTempFile::new().unwrap();
+        let tracker = TelemetryTracker::with_path(temp.path().to_path_buf());
+        tracker.record_savings("slice", 10_000, 1_000);
+
+        let data = tracker.get_data();
+        assert_eq!(data.slice.original, 10_000);
+        assert_eq!(data.slice.optimized, 1_000);
+        assert_eq!(data.slice.saved, 9_000);
+        assert_eq!(data.slice.count, 1);
+        assert_eq!(data.total_tokens_saved, 9_000);
+
+        let dashboard = tracker.render_dashboard();
+        assert!(dashboard.contains("Smart Line Slicer:"));
+        assert!(dashboard.contains("9000 tokens saved"));
     }
 }

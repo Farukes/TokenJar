@@ -33,6 +33,8 @@ pub struct TelemetryData {
 
     // Granular categories
     pub skeleton: CategoryStats,
+    #[serde(default)]
+    pub slice: CategoryStats,
     pub cache: CategoryStats,
     pub repo_map: CategoryStats,
     pub command: CategoryStats,
@@ -54,6 +56,7 @@ impl Default for TelemetryData {
             first_used_at: now.clone(),
             last_used_at: now,
             skeleton: CategoryStats::default(),
+            slice: CategoryStats::default(),
             cache: CategoryStats::default(),
             repo_map: CategoryStats::default(),
             command: CategoryStats::default(),
@@ -66,12 +69,14 @@ impl Default for TelemetryData {
 impl TelemetryData {
     pub fn savings_pct(&self) -> f64 {
         let eff_orig = self.skeleton.original
+            + self.slice.original
             + self.cache.original
             + self.repo_map.original
             + self.command.original
             + self.symbol_search.original
             + self.lockfile.original;
         let eff_saved = self.skeleton.saved
+            + self.slice.saved
             + self.cache.saved
             + self.repo_map.saved
             + self.command.saved

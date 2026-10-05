@@ -72,6 +72,14 @@ pub fn build_system_status(tracker: &TelemetryTracker) -> serde_json::Value {
             "pct": (t_data.command.savings_pct() * 10.0).round() / 10.0,
             "unit": "runs",
             "icon": "✂️"
+        },
+        "slice": {
+            "name": "Smart Line Slicer",
+            "saved": t_data.slice.saved,
+            "count": t_data.slice.count,
+            "pct": (t_data.slice.savings_pct() * 10.0).round() / 10.0,
+            "unit": "slices",
+            "icon": "🔪"
         }
     });
 

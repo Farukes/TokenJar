@@ -105,6 +105,14 @@ def get_system_status() -> dict[str, Any]:
             "unit": "runs",
             "icon": "✂️",
         },
+        "slice": {
+            "name": "Smart Line Slicer",
+            "saved": t_data.slice.saved,
+            "count": t_data.slice.count,
+            "pct": round(t_data.slice.savings_pct, 1),
+            "unit": "slices",
+            "icon": "🔪",
+        },
     }
 
     # Rules status
