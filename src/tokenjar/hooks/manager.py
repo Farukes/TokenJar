@@ -262,15 +262,16 @@ npm() {{ if [ "$1" = "test" ]; then tokenjar run "npm $@"; else command npm "$@"
         # 2. Check if user modified or added other things while TokenJar was installed
         user_modified = False
         mcp_servers = current_config.get("mcpServers", {}) if has_valid_current else {}
-        other_servers = {k: v for k, v in mcp_servers.items() if k != "tokenjar"}
+        other_servers = {k: v for k, v in mcp_servers.items() if k not in ("tokenjar", "token-saver", "token_saver")}
         other_keys = {k: v for k, v in current_config.items() if k != "mcpServers"} if has_valid_current else {}
 
         if bak_content and bak_content != "__NON_EXISTENT__":
             try:
                 bak_json = json.loads(bak_content)
                 temp_current = json.loads(json.dumps(current_config))
-                if "mcpServers" in temp_current and "tokenjar" in temp_current["mcpServers"]:
-                    del temp_current["mcpServers"]["tokenjar"]
+                if "mcpServers" in temp_current:
+                    for key in ("tokenjar", "token-saver", "token_saver"):
+                        temp_current["mcpServers"].pop(key, None)
                 if temp_current != bak_json:
                     user_modified = True
             except Exception:
@@ -282,8 +283,8 @@ npm() {{ if [ "$1" = "test" ]; then tokenjar run "npm $@"; else command npm "$@"
         # Case A: User modified the config (added new servers/keys) while TokenJar was active
         # MUST NEVER overwrite or delete user additions!
         if user_modified and has_valid_current:
-            if "tokenjar" in mcp_servers:
-                del mcp_servers["tokenjar"]
+            for key in ("tokenjar", "token-saver", "token_saver"):
+                mcp_servers.pop(key, None)
             if not mcp_servers and other_keys:
                 del current_config["mcpServers"]
             else:

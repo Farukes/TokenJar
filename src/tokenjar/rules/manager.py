@@ -207,9 +207,16 @@ class RulesManager:
                 continue
             try:
                 content = file_path.read_text(encoding="utf-8")
-                if RULES_MARKER_START in content:
-                    pattern = rf"{re.escape(RULES_MARKER_START)}.*?{re.escape(RULES_MARKER_END)}\s*"
-                    clean = re.sub(pattern, "", content, flags=re.DOTALL).strip()
+                clean = content
+                for m_start, m_end in [
+                    (RULES_MARKER_START, RULES_MARKER_END),
+                    ("# >>> token-saver-rules >>>", "# <<< token-saver-rules <<<"),
+                ]:
+                    if m_start in clean:
+                        pattern = rf"{re.escape(m_start)}.*?{re.escape(m_end)}\s*"
+                        clean = re.sub(pattern, "", clean, flags=re.DOTALL)
+                clean = clean.strip()
+                if clean != content.strip():
                     if not clean:
                         file_path.unlink()
                         results.append((filename, True, f"Removed empty {file_path.name}"))
@@ -220,13 +227,14 @@ class RulesManager:
                 results.append((filename, False, f"Failed cleaning {filename}: {e}"))
 
         # Also remove project-level config if present
-        cfg_toml = project_path / "tokenjar.toml"
-        if cfg_toml.exists():
-            try:
-                cfg_toml.unlink()
-                results.append(("tokenjar.toml", True, "Removed tokenjar.toml configuration"))
-            except Exception:
-                pass
+        for cfg_name in ["tokenjar.toml", "token-saver.toml", "token_saver.toml"]:
+            cfg_file = project_path / cfg_name
+            if cfg_file.exists():
+                try:
+                    cfg_file.unlink()
+                    results.append((cfg_name, True, f"Removed {cfg_name} configuration"))
+                except Exception:
+                    pass
 
         return results
 

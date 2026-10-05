@@ -370,8 +370,10 @@ pub fn uninstall_mcp_all() -> Vec<McpInstallResult> {
             .get_mut("mcpServers")
             .and_then(|s| s.as_object_mut())
         {
-            if servers.remove("tokenjar").is_some() {
-                modified = true;
+            for key in ["tokenjar", "token-saver", "token_saver"] {
+                if servers.remove(key).is_some() {
+                    modified = true;
+                }
             }
         }
 
@@ -765,30 +767,31 @@ pub fn uninstall_all_slash_commands() -> Vec<(&'static str, bool, String)> {
         }
     }
 
-    // 2. Antigravity MCP schemas
-    let agy_schemas = home
-        .join(".gemini")
-        .join("antigravity-cli")
-        .join("mcp")
-        .join("tokenjar");
-    if agy_schemas.exists() {
-        let _ = fs::remove_dir_all(&agy_schemas);
+    // 2. Antigravity MCP schemas (current + legacy)
+    for name in ["tokenjar", "token-saver", "token_saver"] {
+        let agy_schema_dir = home
+            .join(".gemini")
+            .join("antigravity-cli")
+            .join("mcp")
+            .join(name);
+        if agy_schema_dir.exists() {
+            let _ = fs::remove_dir_all(&agy_schema_dir);
+        }
+        let legacy_skill = home
+            .join(".gemini")
+            .join("config")
+            .join("skills")
+            .join(name);
+        if name != "tokenjar" && legacy_skill.exists() {
+            let _ = fs::remove_dir_all(&legacy_skill);
+        }
     }
 
-    // 3. Claude Code command
-    let claude_cmd = home.join(".claude").join("commands").join("tokenjar.md");
-    if claude_cmd.exists() {
-        match fs::remove_file(&claude_cmd) {
-            Ok(_) => results.push((
-                "Claude Code",
-                true,
-                format!("Removed slash command at {:?}", claude_cmd),
-            )),
-            Err(e) => results.push((
-                "Claude Code",
-                false,
-                format!("Failed removing command: {e}"),
-            )),
+    // 3. Claude Code commands (current + legacy)
+    for cmd_file in ["tokenjar.md", "token-saver.md", "token_saver.md"] {
+        let claude_cmd = home.join(".claude").join("commands").join(cmd_file);
+        if claude_cmd.exists() {
+            let _ = fs::remove_file(&claude_cmd);
         }
     }
 
@@ -850,18 +853,12 @@ pub fn full_uninstall() {
 
     // 6. Delete ~/.tokenjar data directory
     if let Some(home) = dirs::home_dir() {
-        let data_dir = home.join(".tokenjar");
-        println!(
-            "\n💾 Purging {:?} (L2 SQLite cache, telemetry, settings)...",
-            data_dir
-        );
-        if data_dir.exists() {
-            match fs::remove_dir_all(&data_dir) {
-                Ok(_) => println!("  ⚪ Deleted {:?} successfully.", data_dir),
-                Err(e) => println!("  ❌ Could not delete {:?}: {e}", data_dir),
+        for dir_name in [".tokenjar", ".token-saver", ".token_saver"] {
+            let data_dir = home.join(dir_name);
+            if data_dir.exists() {
+                let _ = fs::remove_dir_all(&data_dir);
+                println!("  ⚪ Deleted {:?} successfully.", data_dir);
             }
-        } else {
-            println!("  ⚪ Data directory already clean.");
         }
     }
 

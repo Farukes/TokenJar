@@ -179,15 +179,23 @@ pub fn remove_rules(target_dir: &Path) -> Vec<RuleInstallResult> {
             }
         };
 
-        if existing.contains(RULES_MARKER_START) && existing.contains(RULES_MARKER_END) {
-            let re = regex::Regex::new(&format!(
-                r"(?s)\n*{}.*?{}\n*",
-                regex::escape(RULES_MARKER_START),
-                regex::escape(RULES_MARKER_END)
-            ))
-            .unwrap();
-            let cleaned = re.replace(&existing, "\n").trim_matches('\n').to_string();
+        let mut cleaned = existing.clone();
+        for (m_start, m_end) in [
+            (RULES_MARKER_START, RULES_MARKER_END),
+            ("# >>> token-saver-rules >>>", "# <<< token-saver-rules <<<"),
+        ] {
+            if cleaned.contains(m_start) && cleaned.contains(m_end) {
+                let re = regex::Regex::new(&format!(
+                    r"(?s)\n*{}.*?{}\n*",
+                    regex::escape(m_start),
+                    regex::escape(m_end)
+                ))
+                .unwrap();
+                cleaned = re.replace(&cleaned, "\n").trim_matches('\n').to_string();
+            }
+        }
 
+        if cleaned != existing {
             if cleaned.is_empty() {
                 let _ = fs::remove_file(&file_path);
                 results.push(RuleInstallResult {
