@@ -57,6 +57,22 @@ TokenJar is distributed in two official editions:
 1. **🦀 Rust Native Engine (Recommended):** High-performance, self-contained single binary with microsecond AST, 14 MB RAM, and zero Python dependencies.
 2. **🐍 Python Edition:** Pure Python FastMCP package for pip and virtual environments.
 
+### 💡 Recommended Workflow (Best Practice — 3 Simple Steps)
+
+> [!TIP]
+> **Prevent broken paths when cleaning temporary files:**
+> 1. **Place in a Permanent Folder:** If downloading the standalone binary or zip manually, extract `tokenjar` into a permanent, safe directory that won't be accidentally deleted (e.g. `C:\Users\<username>\.tokenjar\bin` on Windows or `~/.local/bin` on Linux/macOS). Avoid temporary folders like `Downloads` or `Temp`. *(Note: The 1-click terminal scripts in Option 1 handle this placement automatically).*
+> 2. **Run One-Time Install:** Open a terminal in that folder and run:
+>    ```bash
+>    tokenjar install
+>    ```
+>    This automatically adds TokenJar to your system `PATH`, configures MCP across all detected AI assistants (Cursor, Claude Desktop, Antigravity, Windsurf, Claude Code), and sets up slash commands.
+> 3. **Activate in Your Project:** In any project directory, run:
+>    ```bash
+>    tokenjar on
+>    ```
+>    *(Or type `/tokenjar on` directly into your AI assistant chat).* This injects repository steering rules (`AGENTS.md`) so your assistant automatically routes through TokenJar's token-saving MCP tools.
+
 ### 📥 1-Click Direct Downloads (Precompiled Binaries)
 
 Click your operating system below to download the latest v1.1.0 release:

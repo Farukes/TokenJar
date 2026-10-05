@@ -57,6 +57,22 @@ TokenJar iki resmi sürüm halinde dağıtılmaktadır:
 1. **🦀 Rust Yerel Motoru (Önerilen):** Mikrosaniyelik AST ayrıştırma, 14 MB RAM ve sıfır Python bağımlılığı içeren yüksek performanslı tekil ikili dosya.
 2. **🐍 Python Sürümü:** pip ve sanal ortamlar (venv) için saf Python FastMCP paketi.
 
+### 💡 Önerilen Kullanım Akışı (En İyi Pratik — 3 Kolay Adım)
+
+> [!TIP]
+> **Geçici dosyaları temizlerken dosya yollarının kopmasını önlemek için:**
+> 1. **Kalıcı ve Güvenli Bir Klasöre Çıkarın:** Bağımsız binary veya zip dosyasını elle indiriyorsanız, `tokenjar` dosyasını silinmeyecek kalıcı bir dizine çıkarın (Örn: Windows'ta `C:\Users\<Kullanıcı>\.tokenjar\bin`, Linux/macOS'ta `~/.local/bin` veya sabit bir geliştirici klasörü). `İndirilenler (Downloads)` veya `Temp` gibi sonradan temizlenebilecek geçici klasörlerde bırakmayın. *(Not: Seçenek 1'deki tek satırlık terminal yükleyicileri bu adımı zaten otomatik olarak kalıcı dizine yapar).*
+> 2. **Tek Seferlik Kurulumu Çalıştırın:** O klasörde terminal açıp şu komutu girin:
+>    ```bash
+>    tokenjar install
+>    ```
+>    Bu komut TokenJar'ı sistem `PATH` ortam değişkenine ekler, tespit edilen tüm yapay zeka asistanlarına (Cursor, Claude Desktop, Antigravity, Windsurf, Claude Code) MCP sunucusunu otomatik bağlar ve slash komutlarını yükler.
+> 3. **Projenizde Aktifleştirin:** Kodlama yapacağınız projenin dizininde veya terminalinde şu komutu çalıştırın:
+>    ```bash
+>    tokenjar on
+>    ```
+>    *(Veya doğrudan yapay zeka asistanınızın sohbet penceresine `/tokenjar on` yazın).* Bu işlem projenize `AGENTS.md` kurallarını ekleyerek asistanınızın TokenJar'ın yüksek tasarruflu MCP araçlarını kullanmasını sağlar.
+
 ### 📥 Doğrudan İndirme Bağlantıları (Derlenmiş v1.1.0 İkili Dosyaları)
 
 İşletim sisteminize tıklayarak en güncel v1.1.0 sürümünü anında indirin:
