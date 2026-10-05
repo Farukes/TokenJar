@@ -93,15 +93,24 @@ flowchart TD
   - Real-time financial savings per model (Claude 3.5 Sonnet, GPT-4o, Gemini 1.5 Pro).
   - Configurable compression rules per server.
 
+### 6. ⚡ Surgical Code Modification Engine (`edit_file_smart` / `patch_smart`)
+- **Core Value:** While TokenJar slashes token costs during inspection (reading, AST skeletons, symbol lookups), model output generation during file modification remains a major token drain (full file dumps, repeated line rewrites, truncations).
+- **Architecture:**
+  - **AST Node Replacement:** Target specific functions, methods, or classes by symbol name and replace the exact AST node via Tree-sitter without rewriting or disturbing surrounding code or imports.
+  - **Surgical Unified Diff Patcher:** Apply compact multi-hunk unified diffs with fuzzy context line alignment and whitespace resilience.
+  - **Zero-Truncation Guarantee (Anti-Lazy Coder):** Automatically parse and validate syntax before committing changes to disk, rejecting corrupted, truncated, or broken patches with instant feedback.
+  - **Expected Impact:** 70–85% reduction in generation token expenditure; eliminates destructive file overwrite errors.
+
 ---
 
 ## 📅 Roadmap & Milestones
 
 - **Phase 1: Gateway Core & Router** — Subprocess multiplexer over stdio/JSON-RPC.
 - **Phase 2: Tabular & JSON Filter Pipeline** — SQL summarizer and metadata stripper.
-- **Phase 3: Rate Limiting & Circuit Breaker** — Hard token ceiling guards.
-- **Phase 4: Web UI Gateway Configuration** — 1-Click downstream server management.
-- **Phase 5: Release v2.0 GA** — Crates.io, PyPI, Homebrew, and Winget updates.
+- **Phase 3: Surgical File Modifier (`edit_file_smart` / `patch_smart`)** — Tree-Sitter AST replacement and zero-truncation diff patcher.
+- **Phase 4: Rate Limiting & Circuit Breaker** — Hard token ceiling guards.
+- **Phase 5: Web UI Gateway Configuration** — 1-Click downstream server management.
+- **Phase 6: Release v2.0 GA** — Crates.io, PyPI, Homebrew, and Winget updates.
 
 ---
-*Preserved for future development. Created: September 2026.*
+*Preserved for future development. Created: September 2026. Updated: October 2026.*

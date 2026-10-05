@@ -44,7 +44,9 @@ fn test_extreme_100_step_stress_rust() {
 
     // Step 1: Cold read
     let t0 = Instant::now();
-    let first = read_file_smart(path_str, false, None, None, None, None, &cache, &config, &tracker);
+    let first = read_file_smart(
+        path_str, false, None, None, None, None, &cache, &config, &tracker,
+    );
     assert!(
         !first.contains("[CACHED]"),
         "Step 1: Cold read must return full content"
@@ -57,7 +59,9 @@ fn test_extreme_100_step_stress_rust() {
     // Steps 2-10: Repeated cache hit storm
     let t0 = Instant::now();
     for step in 2..=10 {
-        let cached = read_file_smart(path_str, false, None, None, None, None, &cache, &config, &tracker);
+        let cached = read_file_smart(
+            path_str, false, None, None, None, None, &cache, &config, &tracker,
+        );
         assert!(
             cached.contains("[CACHED]"),
             "Step {step}: Cache hit verification failed"
@@ -108,8 +112,9 @@ fn test_extreme_100_step_stress_rust() {
             "# Modification step {step}\ndef extra_{step}(): return {step}\n"
         ));
         std::fs::write(&sample_file, &current_code).unwrap();
-        let diff_result =
-            read_file_smart(path_str, false, None, None, None, None, &cache, &config, &tracker);
+        let diff_result = read_file_smart(
+            path_str, false, None, None, None, None, &cache, &config, &tracker,
+        );
         assert!(
             diff_result.contains('+') || diff_result.contains("extra_"),
             "Step {step}: Differential update must capture modifications"

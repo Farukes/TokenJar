@@ -607,7 +607,14 @@ impl McpServer {
                 let opt_tok = (res.len() / 4) as u64;
                 let root = Path::new(root_path_str);
                 let mut manifest_tok: u64 = 0;
-                for fname in &["README.md", "Cargo.toml", "package.json", "pyproject.toml", "src/main.rs", "src/lib.rs"] {
+                for fname in &[
+                    "README.md",
+                    "Cargo.toml",
+                    "package.json",
+                    "pyproject.toml",
+                    "src/main.rs",
+                    "src/lib.rs",
+                ] {
                     if let Ok(meta) = std::fs::metadata(root.join(fname)) {
                         manifest_tok += meta.len() / 4;
                     }

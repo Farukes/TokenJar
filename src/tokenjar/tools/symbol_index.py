@@ -311,6 +311,49 @@ class SymbolIndexer:
         return all_symbols
 
 
+def compute_similarity(query: str, target: str) -> float:
+    """Computes similarity score between a search query and a symbol name [0.0 - 1.0].
+    Combines case-insensitive exact matching, separator-stripped matching (snake/camel normalization),
+    normalized Levenshtein / SequenceMatcher distance, substring overlap, and trigram/dice coefficient.
+    """
+    q_lower = query.lower()
+    t_lower = target.lower()
+    if q_lower == t_lower:
+        return 1.0
+
+    q_clean = "".join(c for c in q_lower if c not in "_- " and not c.isspace())
+    t_clean = "".join(c for c in t_lower if c not in "_- " and not c.isspace())
+    if q_clean == t_clean:
+        return 0.98
+
+    score = 0.0
+
+    # Substring containment on normalized clean strings
+    if q_clean and t_clean and (q_clean in t_clean or t_clean in q_clean):
+        ratio = min(len(q_clean), len(t_clean)) / max(len(q_clean), len(t_clean))
+        if ratio >= 0.4:
+            score = max(score, 0.75 + 0.20 * ratio)
+
+    # SequenceMatcher ratio
+    import difflib
+
+    seq_ratio = difflib.SequenceMatcher(None, q_lower, t_lower).ratio()
+    seq_clean_ratio = difflib.SequenceMatcher(None, q_clean, t_clean).ratio()
+    score = max(score, seq_ratio, seq_clean_ratio)
+
+    # Trigram similarity if lengths >= 3
+    if len(q_lower) >= 3 and len(t_lower) >= 3:
+        q_trigrams = {q_lower[i : i + 3] for i in range(len(q_lower) - 2)}
+        t_trigrams = {t_lower[i : i + 3] for i in range(len(t_lower) - 2)}
+        intersection = len(q_trigrams & t_trigrams)
+        total = len(q_trigrams) + len(t_trigrams)
+        if total > 0:
+            trigram_sim = (2.0 * intersection) / total
+            score = max(score, trigram_sim)
+
+    return score
+
+
 def find_symbol_global(
     query: str,
     root_path: str = ".",
@@ -362,6 +405,55 @@ def find_symbol_global(
         matches = matches[:max_results]
 
     if not matches:
+        # Fallback: Hybrid fuzzy / trigram search across repository symbols
+        all_syms: list[IndexedSymbol] = []
+        cached_all = cache.get_all_project_symbols(str(root))
+        if cached_all:
+            for m in cached_all:
+                all_syms.append(
+                    IndexedSymbol(
+                        name=m["name"],
+                        kind=m["kind"],
+                        file_path=m["file_path"],
+                        line=m["line"],
+                        signature=m["signature"],
+                        content_hash=m["file_hash"],
+                    )
+                )
+        else:
+            all_syms = symbols
+
+        candidates: list[tuple[IndexedSymbol, float]] = []
+        for s in all_syms:
+            sim = compute_similarity(q, s.name)
+            if sim >= 0.50:
+                candidates.append((s, sim))
+
+        candidates.sort(key=lambda x: (-x[1], x[0].file_path, x[0].line))
+
+        # Deduplicate identical (file_path, name, line)
+        seen: set[str] = set()
+        deduped: list[tuple[IndexedSymbol, float]] = []
+        for s, sim in candidates:
+            k = f"{s.file_path}:{s.name}:{s.line}"
+            if k not in seen:
+                seen.add(k)
+                deduped.append((s, sim))
+
+        if deduped:
+            display_candidates = deduped[:max_results]
+            lines = [
+                f"[SYMBOLS] No exact match for '{query}'. Did you mean one of these symbols?",
+                "----------------------------------------",
+            ]
+            for i, (m, score) in enumerate(display_candidates, 1):
+                pct = int(round(score * 100))
+                lines.append(f"{i}. [{m.kind.upper()}] {m.name} -> {m.file_path}:{m.line} ({pct}% match)")
+                if m.signature:
+                    lines.append(f"   Signature: {m.signature}")
+            result_text = "\n".join(lines)
+            return result_text
+
         return f"No symbols found matching '{query}' across the codebase."
 
     lines = [

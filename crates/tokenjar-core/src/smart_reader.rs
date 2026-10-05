@@ -11,6 +11,9 @@ use crate::filters::lockfile::process_lockfile;
 use crate::telemetry::TelemetryTracker;
 use crate::token_counter::format_savings;
 
+/// Maximum lines per read slice before auto-pagination kicks in (protects IDE context).
+pub const MAX_OUTPUT_LINES: usize = 80;
+
 /// Intelligently reads a file with session caching, line slicing, and lockfile protection.
 #[allow(clippy::too_many_arguments)]
 pub fn read_file_smart(
@@ -98,10 +101,44 @@ pub fn read_file_smart(
                         .map(|(idx, line)| format!("{}: {}", start + idx, line))
                         .collect();
 
+                    let slice_key = format!("{file_path}#sym:{sym}");
                     let header = format!(
                         "[TOKENJAR] Symbol '{sym}' found at lines {start}-{end} of {total_lines} in '{file_path}':\n"
                     );
-                    let sliced_content = format!("{header}{}", slice_lines.join("\n"));
+
+                    // Check slicing cache
+                    let raw_sliced = format!("{header}{}", slice_lines.join("\n"));
+                    let entry = cache.get(&slice_key, &raw_sliced);
+                    if entry.status == CacheStatus::Unchanged {
+                        let orig_tok = (content.len() / 4) as u64;
+                        let opt_tok = (entry.content.len() / 4) as u64;
+                        tracker.record_savings("cache", orig_tok, opt_tok);
+                        let savings_msg = format_savings(&content, &entry.content);
+                        return format!("{}\n\nToken savings: {savings_msg}", entry.content);
+                    }
+
+                    // Auto-pagination if symbol is larger than MAX_OUTPUT_LINES
+                    let (display_slice, paginated) = if slice_lines.len() > MAX_OUTPUT_LINES
+                        && !force_full
+                    {
+                        let p_end = start + MAX_OUTPUT_LINES - 1;
+                        (
+                            &slice_lines[..MAX_OUTPUT_LINES],
+                            Some(format!(
+                                "\n\n[TOKENJAR PAGINATION] Showing lines {start}-{p_end} of {total_lines}. (Remaining lines truncated to protect context window)\n\
+                                 👉 To read the next slice, call read_file_smart with start_line={}, end_line={}.",
+                                p_end + 1,
+                                (p_end + MAX_OUTPUT_LINES).min(end)
+                            )),
+                        )
+                    } else {
+                        (&slice_lines[..], None)
+                    };
+                    let body = display_slice.join("\n");
+                    let sliced_content = match paginated {
+                        Some(notice) => format!("{header}{body}{notice}"),
+                        None => format!("{header}{body}"),
+                    };
 
                     let orig_tok = (content.len() / 4) as u64;
                     let opt_tok = (sliced_content.len() / 4) as u64;
@@ -132,18 +169,28 @@ pub fn read_file_smart(
                     .map(|(idx, line)| format!("{}: {}", start + idx, line))
                     .collect();
 
+                let slice_key = format!("{file_path}#sym:{sym}");
                 let header = format!(
                     "[TOKENJAR] Symbol '{sym}' matched at line {start} (showing lines {start}-{end} of {total_lines}) in '{file_path}':\n"
                 );
-                let sliced_content = format!("{header}{}", slice_lines.join("\n"));
+                let raw_sliced = format!("{header}{}", slice_lines.join("\n"));
+                let entry = cache.get(&slice_key, &raw_sliced);
+                if entry.status == CacheStatus::Unchanged {
+                    let orig_tok = (content.len() / 4) as u64;
+                    let opt_tok = (entry.content.len() / 4) as u64;
+                    tracker.record_savings("cache", orig_tok, opt_tok);
+                    let savings_msg = format_savings(&content, &entry.content);
+                    return format!("{}\n\nToken savings: {savings_msg}", entry.content);
+                }
+
                 let orig_tok = (content.len() / 4) as u64;
-                let opt_tok = (sliced_content.len() / 4) as u64;
+                let opt_tok = (raw_sliced.len() / 4) as u64;
                 if orig_tok > opt_tok {
                     tracker.record_savings("slice", orig_tok, opt_tok);
-                    let savings_msg = format_savings(&content, &sliced_content);
-                    return format!("{sliced_content}\n\nToken savings: {savings_msg}");
+                    let savings_msg = format_savings(&content, &raw_sliced);
+                    return format!("{raw_sliced}\n\nToken savings: {savings_msg}");
                 }
-                return sliced_content;
+                return raw_sliced;
             }
 
             return format!(
@@ -175,8 +222,40 @@ pub fn read_file_smart(
             .map(|(idx, line)| format!("{}: {}", start + idx, line))
             .collect();
 
+        let slice_key = format!("{file_path}#L{start}-L{end}");
         let header = format!("[TOKENJAR] Lines {start}-{end} of {total} in '{file_path}':\n");
-        let sliced_content = format!("{header}{}", slice_lines.join("\n"));
+
+        // Check slicing cache
+        let raw_sliced = format!("{header}{}", slice_lines.join("\n"));
+        let entry = cache.get(&slice_key, &raw_sliced);
+        if entry.status == CacheStatus::Unchanged {
+            let orig_tok = (content.len() / 4) as u64;
+            let opt_tok = (entry.content.len() / 4) as u64;
+            tracker.record_savings("cache", orig_tok, opt_tok);
+            let savings_msg = format_savings(&content, &entry.content);
+            return format!("{}\n\nToken savings: {savings_msg}", entry.content);
+        }
+
+        // Auto-pagination if requested slice is > MAX_OUTPUT_LINES
+        let (display_slice, paginated) = if slice_lines.len() > MAX_OUTPUT_LINES && !force_full {
+            let p_end = start + MAX_OUTPUT_LINES - 1;
+            (
+                &slice_lines[..MAX_OUTPUT_LINES],
+                Some(format!(
+                    "\n\n[TOKENJAR PAGINATION] Showing lines {start}-{p_end} of {total}. (Remaining lines truncated to protect context window)\n\
+                     👉 To read the next slice, call read_file_smart with start_line={}, end_line={}.",
+                    p_end + 1,
+                    (p_end + MAX_OUTPUT_LINES).min(end)
+                )),
+            )
+        } else {
+            (&slice_lines[..], None)
+        };
+        let body = display_slice.join("\n");
+        let sliced_content = match paginated {
+            Some(notice) => format!("{header}{body}{notice}"),
+            None => format!("{header}{body}"),
+        };
 
         let orig_tok = (content.len() / 4) as u64;
         let opt_tok = (sliced_content.len() / 4) as u64;
@@ -205,6 +284,37 @@ pub fn read_file_smart(
     let entry = cache.get(file_path, &content);
 
     if entry.status == CacheStatus::FirstRead {
+        let lines: Vec<&str> = content.lines().collect();
+        let total = lines.len();
+        let is_lock = config.is_lockfile(p)
+            || file_path.ends_with(".lock")
+            || file_path.ends_with("package-lock.json");
+        if total > MAX_OUTPUT_LINES && !force_full && !is_lock {
+            let p_end = MAX_OUTPUT_LINES;
+            let slice_lines: Vec<String> = lines[..p_end]
+                .iter()
+                .enumerate()
+                .map(|(idx, line)| format!("{}: {}", idx + 1, line))
+                .collect();
+            let header =
+                format!("[TOKENJAR] Showing lines 1-{p_end} of {total} in '{file_path}':\n");
+            let body = slice_lines.join("\n");
+            let pagination_notice = format!(
+                "\n\n[TOKENJAR PAGINATION] Showing lines 1-{p_end} of {total}. (Remaining lines truncated to protect context window)\n\
+                 👉 To read the next slice, call read_file_smart with start_line={}, end_line={} (or pass force_full=true).",
+                p_end + 1,
+                (p_end + MAX_OUTPUT_LINES).min(total)
+            );
+            let paginated_content = format!("{header}{body}{pagination_notice}");
+            let orig_tok = (content.len() / 4) as u64;
+            let opt_tok = (paginated_content.len() / 4) as u64;
+            if orig_tok > opt_tok {
+                tracker.record_savings("slice", orig_tok, opt_tok);
+                let savings_msg = format_savings(&content, &paginated_content);
+                return format!("{paginated_content}\n\nToken savings: {savings_msg}");
+            }
+            return paginated_content;
+        }
         return entry.content;
     }
 
@@ -241,11 +351,15 @@ mod tests {
         let p_str = file_path.to_str().unwrap();
 
         // 1st read -> full content
-        let r1 = read_file_smart(p_str, false, None, None, None, None, &cache, &config, &tracker);
+        let r1 = read_file_smart(
+            p_str, false, None, None, None, None, &cache, &config, &tracker,
+        );
         assert_eq!(r1, "Hello world\n");
 
         // 2nd read -> cached hit
-        let r2 = read_file_smart(p_str, false, None, None, None, None, &cache, &config, &tracker);
+        let r2 = read_file_smart(
+            p_str, false, None, None, None, None, &cache, &config, &tracker,
+        );
         assert!(r2.contains("unchanged since last read"));
         assert!(r2.contains("Token savings:"));
     }
@@ -383,7 +497,9 @@ def standalone_helper():
         let tracker = TelemetryTracker::with_path(temp_telemetry.path().to_path_buf());
 
         let dir_str = temp.path().to_str().unwrap();
-        let r = read_file_smart(dir_str, false, None, None, None, None, &cache, &config, &tracker);
+        let r = read_file_smart(
+            dir_str, false, None, None, None, None, &cache, &config, &tracker,
+        );
         assert!(r.contains("is a directory, not a file"));
         assert!(r.contains("get_directory_tree_tool"));
     }
@@ -401,7 +517,83 @@ def standalone_helper():
         let tracker = TelemetryTracker::with_path(temp_telemetry.path().to_path_buf());
 
         let p_str = file_path.to_str().unwrap();
-        let r = read_file_smart(p_str, false, None, None, None, None, &cache, &config, &tracker);
+        let r = read_file_smart(
+            p_str, false, None, None, None, None, &cache, &config, &tracker,
+        );
         assert!(r.contains("copy"));
+    }
+
+    #[test]
+    fn test_smart_reader_slice_caching() {
+        let temp = tempfile::tempdir().unwrap();
+        let file_path = temp.path().join("slice_cache.txt");
+        let sample = "line 1\nline 2\nline 3\nline 4\nline 5\n";
+        std::fs::write(&file_path, sample).unwrap();
+
+        let cache = SessionCache::new();
+        let config = TokenJarConfig::default();
+        let temp_telemetry = tempfile::NamedTempFile::new().unwrap();
+        let tracker = TelemetryTracker::with_path(temp_telemetry.path().to_path_buf());
+
+        let p_str = file_path.to_str().unwrap();
+
+        // 1st slice read -> extracts lines
+        let r1 = read_file_smart(
+            p_str,
+            false,
+            None,
+            Some(2),
+            Some(4),
+            None,
+            &cache,
+            &config,
+            &tracker,
+        );
+        assert!(r1.contains("Lines 2-4 of 5"));
+
+        // 2nd slice read -> cache hit!
+        let r2 = read_file_smart(
+            p_str,
+            false,
+            None,
+            Some(2),
+            Some(4),
+            None,
+            &cache,
+            &config,
+            &tracker,
+        );
+        assert!(r2.contains("[CACHED]"));
+        assert!(r2.contains("unchanged since last read"));
+        assert!(r2.contains("Token savings:"));
+    }
+
+    #[test]
+    fn test_smart_reader_auto_pagination() {
+        let temp = tempfile::tempdir().unwrap();
+        let file_path = temp.path().join("large_file.txt");
+        let lines: Vec<String> = (1..=120).map(|i| format!("Line {i}")).collect();
+        std::fs::write(&file_path, lines.join("\n")).unwrap();
+
+        let cache = SessionCache::new();
+        let config = TokenJarConfig::default();
+        let temp_telemetry = tempfile::NamedTempFile::new().unwrap();
+        let tracker = TelemetryTracker::with_path(temp_telemetry.path().to_path_buf());
+
+        let p_str = file_path.to_str().unwrap();
+
+        // Normal read -> auto-paginates to 80 lines
+        let r = read_file_smart(
+            p_str, false, None, None, None, None, &cache, &config, &tracker,
+        );
+        assert!(r.contains("[TOKENJAR PAGINATION] Showing lines 1-80 of 120"));
+        assert!(r.contains("start_line=81, end_line=120"));
+
+        // With force_full=true -> returns all 120 lines without pagination notice
+        let r_full = read_file_smart(
+            p_str, true, None, None, None, None, &cache, &config, &tracker,
+        );
+        assert!(!r_full.contains("[TOKENJAR PAGINATION]"));
+        assert!(r_full.contains("Line 120"));
     }
 }

@@ -367,7 +367,32 @@ pub fn get_symbol_file<P: AsRef<Path>>(file_path: P, symbol_name: &str) -> Strin
 
     match find_symbol_in_code(&content, lang, symbol_name) {
         Some(impl_str) => impl_str,
-        None => format!("Symbol '{symbol_name}' not found in {}.", p.display()),
+        None => {
+            let rel = p.to_string_lossy();
+            let symbols = crate::symbols::extract_symbols_from_code(&content, lang, &rel);
+            let mut candidates: Vec<(&str, f64)> = symbols
+                .iter()
+                .map(|s| {
+                    (
+                        s.name.as_str(),
+                        crate::symbols::compute_similarity(symbol_name, &s.name),
+                    )
+                })
+                .filter(|(_, sim)| *sim >= 0.50)
+                .collect();
+            candidates.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+            candidates.dedup_by(|a, b| a.0 == b.0);
+            if !candidates.is_empty() {
+                let suggestions: Vec<&str> = candidates.iter().take(3).map(|(n, _)| *n).collect();
+                format!(
+                    "Symbol '{symbol_name}' not found in {}. Did you mean: {}?",
+                    p.display(),
+                    suggestions.join(", ")
+                )
+            } else {
+                format!("Symbol '{symbol_name}' not found in {}.", p.display())
+            }
+        }
     }
 }
 
@@ -419,5 +444,15 @@ def beta(x: int) -> int:
         assert!(found.starts_with("def beta(x: int) -> int:"));
         assert!(found.contains("return x * 2"));
         assert!(!found.contains("alpha"));
+    }
+
+    #[test]
+    fn test_get_symbol_file_fuzzy_suggestion() {
+        let temp = tempfile::tempdir().unwrap();
+        let file = temp.path().join("service.py");
+        std::fs::write(&file, "def calculate_total(a, b):\n    return a + b\n").unwrap();
+
+        let res = get_symbol_file(&file, "calculate_totl");
+        assert!(res.contains("Did you mean: calculate_total?"));
     }
 }

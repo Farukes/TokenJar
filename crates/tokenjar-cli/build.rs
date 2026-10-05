@@ -5,7 +5,10 @@ fn main() {
         res.set_language(0x0409); // English (US)
         res.set_version_info(winres::VersionInfo::FILEVERSION, 0x0001000000030000);
         res.set_version_info(winres::VersionInfo::PRODUCTVERSION, 0x0001000000030000);
-        res.set("FileDescription", "TokenJar - AI Context and Token Optimization Engine");
+        res.set(
+            "FileDescription",
+            "TokenJar - AI Context and Token Optimization Engine",
+        );
         res.set("ProductName", "TokenJar");
         res.set("LegalCopyright", "Copyright (C) 2026 Ömer Faruk Eskitürk");
         res.set("OriginalFilename", "tokenjar.exe");
@@ -14,7 +17,8 @@ fn main() {
         res.set("FileVersion", "1.0.3.0");
         res.set("ProductVersion", "1.0.3.0");
         res.set_icon("assets/icon.ico");
-        res.set_manifest(r#"
+        res.set_manifest(
+            r#"
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
 <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
@@ -36,7 +40,8 @@ fn main() {
     </application>
 </compatibility>
 </assembly>
-"#);
+"#,
+        );
         if let Err(e) = res.compile() {
             eprintln!("cargo:warning=winres compilation failed: {}", e);
         }

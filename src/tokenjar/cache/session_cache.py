@@ -93,8 +93,13 @@ class SessionCache:
         if entry.hash == current_hash:
             # Unchanged — return compact reference (pure L1 in-memory hit)
             self._stats.cache_hits += 1
-            base_name = os.path.basename(file_path)
-            compact = f"[CACHED] {base_name} — unchanged since last read (read #{entry.read_count})"
+            if "#" in file_path:
+                base_part, frag = file_path.split("#", 1)
+                base_name = os.path.basename(base_part)
+                compact = f"[CACHED] {base_name} ({frag}) — unchanged since last read (read #{entry.read_count})"
+            else:
+                base_name = os.path.basename(file_path)
+                compact = f"[CACHED] {base_name} — unchanged since last read (read #{entry.read_count})"
             return CacheResult(
                 status=CacheStatus.UNCHANGED,
                 content=compact,
@@ -158,6 +163,9 @@ class SessionCache:
         """Normalize file path for consistent cache keys."""
         import os
 
+        if "#" in file_path:
+            base_p, frag = file_path.split("#", 1)
+            return f"{os.path.normpath(os.path.abspath(base_p))}#{frag}"
         return os.path.normpath(os.path.abspath(file_path))
 
     @classmethod

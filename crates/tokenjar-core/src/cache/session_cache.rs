@@ -51,12 +51,21 @@ pub struct SessionCache {
 }
 
 fn normalize_path_key(path: &str) -> String {
-    let clean = path.replace('\\', "/");
+    let (base_path, fragment) = match path.split_once('#') {
+        Some((b, f)) => (b, Some(f)),
+        None => (path, None),
+    };
+    let clean = base_path.replace('\\', "/");
     let trimmed = clean.strip_prefix("./").unwrap_or(&clean);
-    if let Ok(canon) = std::path::Path::new(path).canonicalize() {
+    let normalized_base = if let Ok(canon) = std::path::Path::new(base_path).canonicalize() {
         canon.to_string_lossy().replace('\\', "/")
     } else {
         trimmed.to_string()
+    };
+    if let Some(frag) = fragment {
+        format!("{normalized_base}#{frag}")
+    } else {
+        normalized_base
     }
 }
 
@@ -87,14 +96,21 @@ impl SessionCache {
 
             if entry.hash == current_hash {
                 stats.hits += 1;
-                // File unchanged
-                let file_name = std::path::Path::new(&path_key)
+                // File or slice unchanged
+                let (base_for_name, fragment) = match file_path.split_once('#') {
+                    Some((b, f)) => (b, Some(f)),
+                    None => (file_path, None),
+                };
+                let file_name = std::path::Path::new(base_for_name)
                     .file_name()
                     .and_then(|n| n.to_str())
-                    .unwrap_or(file_path);
+                    .unwrap_or(base_for_name);
 
-                let cached_msg =
-                    format!("[CACHED] {file_name} — unchanged since last read (read #{read_no})");
+                let cached_msg = if let Some(frag) = fragment {
+                    format!("[CACHED] {file_name} ({frag}) — unchanged since last read (read #{read_no})")
+                } else {
+                    format!("[CACHED] {file_name} — unchanged since last read (read #{read_no})")
+                };
                 let opt_tokens = crate::token_counter::estimate_tokens(&cached_msg);
 
                 return CacheResult {

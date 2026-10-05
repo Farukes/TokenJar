@@ -251,8 +251,12 @@ async fn main() {
             println!("============================================================");
             println!("Useful Commands:");
             println!("  tokenjar install      -> One-time setup: adds to PATH & enables IDE MCP");
-            println!("  tokenjar on           -> Activate TokenJar & generate AGENTS.md in project");
-            println!("  tokenjar off          -> Deactivate TokenJar & clean AGENTS.md from project");
+            println!(
+                "  tokenjar on           -> Activate TokenJar & generate AGENTS.md in project"
+            );
+            println!(
+                "  tokenjar off          -> Deactivate TokenJar & clean AGENTS.md from project"
+            );
             println!("  tokenjar enable       -> Enable MCP server in all detected IDEs globally");
             println!("  tokenjar disable      -> Disable MCP server from all IDEs globally");
             println!("  tokenjar stats        -> View live token and financial savings");

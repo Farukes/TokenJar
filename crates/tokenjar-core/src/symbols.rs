@@ -419,6 +419,111 @@ pub fn index_repository(root_path: &Path) -> Vec<IndexedSymbol> {
     all_symbols
 }
 
+/// Computes similarity score between a search query and a symbol name [0.0 - 1.0].
+/// Combines case-insensitive exact matching, separator-stripped matching (snake/camel normalization),
+/// normalized Levenshtein distance, substring overlap, and trigram/dice coefficient.
+pub fn compute_similarity(q: &str, target: &str) -> f64 {
+    let q_lower = q.to_lowercase();
+    let t_lower = target.to_lowercase();
+    if q_lower == t_lower {
+        return 1.0;
+    }
+
+    let q_clean: String = q_lower
+        .chars()
+        .filter(|c| *c != '_' && *c != '-' && !c.is_whitespace())
+        .collect();
+    let t_clean: String = t_lower
+        .chars()
+        .filter(|c| *c != '_' && *c != '-' && !c.is_whitespace())
+        .collect();
+    if q_clean == t_clean {
+        return 0.98;
+    }
+
+    let mut score: f64 = 0.0;
+
+    // Substring containment on normalized clean strings
+    if !q_clean.is_empty()
+        && !t_clean.is_empty()
+        && (t_clean.contains(&q_clean) || q_clean.contains(&t_clean))
+    {
+        let ratio =
+            (q_clean.len().min(t_clean.len()) as f64) / (q_clean.len().max(t_clean.len()) as f64);
+        if ratio >= 0.4 {
+            score = score.max(0.75 + 0.20 * ratio);
+        }
+    }
+
+    // Levenshtein similarity on lowercase characters
+    let a_chars: Vec<char> = q_lower.chars().collect();
+    let b_chars: Vec<char> = t_lower.chars().collect();
+    let m = a_chars.len();
+    let n = b_chars.len();
+    if m > 0 && n > 0 {
+        let mut prev: Vec<usize> = (0..=n).collect();
+        let mut curr = vec![0; n + 1];
+
+        for i in 1..=m {
+            curr[0] = i;
+            for j in 1..=n {
+                let cost = if a_chars[i - 1] == b_chars[j - 1] {
+                    0
+                } else {
+                    1
+                };
+                curr[j] = (prev[j] + 1).min(curr[j - 1] + 1).min(prev[j - 1] + cost);
+            }
+            prev.copy_from_slice(&curr);
+        }
+        let dist = prev[n];
+        let max_len = m.max(n);
+        let lev_sim = 1.0 - (dist as f64 / max_len as f64);
+        score = score.max(lev_sim);
+    }
+
+    // Levenshtein similarity on cleaned characters (snake_case to CamelCase tolerance)
+    let ac_chars: Vec<char> = q_clean.chars().collect();
+    let bc_chars: Vec<char> = t_clean.chars().collect();
+    let mc = ac_chars.len();
+    let nc = bc_chars.len();
+    if mc > 0 && nc > 0 {
+        let mut prev: Vec<usize> = (0..=nc).collect();
+        let mut curr = vec![0; nc + 1];
+
+        for i in 1..=mc {
+            curr[0] = i;
+            for j in 1..=nc {
+                let cost = if ac_chars[i - 1] == bc_chars[j - 1] {
+                    0
+                } else {
+                    1
+                };
+                curr[j] = (prev[j] + 1).min(curr[j - 1] + 1).min(prev[j - 1] + cost);
+            }
+            prev.copy_from_slice(&curr);
+        }
+        let dist = prev[nc];
+        let max_len = mc.max(nc);
+        let lev_clean_sim = 1.0 - (dist as f64 / max_len as f64);
+        score = score.max(lev_clean_sim);
+    }
+
+    // Trigram similarity if lengths >= 3
+    if m >= 3 && n >= 3 {
+        let q_trigrams: HashSet<&[char]> = a_chars.windows(3).collect();
+        let t_trigrams: HashSet<&[char]> = b_chars.windows(3).collect();
+        let matches = q_trigrams.intersection(&t_trigrams).count();
+        let total = q_trigrams.len() + t_trigrams.len();
+        if total > 0 {
+            let trigram_sim = (2.0 * matches as f64) / (total as f64);
+            score = score.max(trigram_sim);
+        }
+    }
+
+    score
+}
+
 /// Searches for code symbols (classes, functions, methods, structs) across the repository.
 pub fn find_symbol_global(
     query: &str,
@@ -450,6 +555,59 @@ pub fn find_symbol_global(
     };
 
     if matches.is_empty() {
+        // Fallback: Hybrid fuzzy / trigram search across repository symbols
+        if let Ok(all_symbols) = cache.get_all_symbols(&root_str) {
+            let mut candidates: Vec<(IndexedSymbol, f64)> = all_symbols
+                .into_iter()
+                .filter_map(|s| {
+                    let score = compute_similarity(q, &s.name);
+                    if score >= 0.50 {
+                        Some((s, score))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+
+            // Sort by score descending, then by file_path and line
+            candidates.sort_by(|a, b| {
+                b.1.partial_cmp(&a.1)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| a.0.file_path.cmp(&b.0.file_path))
+                    .then_with(|| a.0.line.cmp(&b.0.line))
+            });
+
+            // Deduplicate same name in same file
+            let mut seen = HashSet::new();
+            candidates
+                .retain(|(s, _)| seen.insert(format!("{}:{}:{}", s.file_path, s.name, s.line)));
+
+            if !candidates.is_empty() {
+                let display_candidates = &candidates[..candidates.len().min(max_results)];
+                let mut lines = Vec::new();
+                lines.push(format!(
+                    "[SYMBOLS] No exact match for '{query}'. Did you mean one of these symbols?"
+                ));
+                lines.push("----------------------------------------".to_string());
+                for (i, (m, score)) in display_candidates.iter().enumerate() {
+                    let pct = (score * 100.0).round() as usize;
+                    lines.push(format!(
+                        "{}. [{}] {} -> {}:{} ({}% match)",
+                        i + 1,
+                        m.kind.to_uppercase(),
+                        m.name,
+                        m.file_path,
+                        m.line,
+                        pct
+                    ));
+                    if !m.signature.is_empty() {
+                        lines.push(format!("   Signature: {}", m.signature));
+                    }
+                }
+                return lines.join("\n");
+            }
+        }
+
         return format!("No symbols found matching '{query}' across the codebase.");
     }
 
@@ -718,5 +876,37 @@ public class AuthProvider {
         let result = find_symbol_global("PaymentService", temp.path(), false, 10);
         assert!(result.contains("PaymentService"));
         assert!(result.contains("service.rs"));
+    }
+
+    #[test]
+    fn test_compute_similarity() {
+        assert!((compute_similarity("OrderProcessor", "OrderProcessor") - 1.0).abs() < 1e-6);
+        assert!(compute_similarity("order_processor", "OrderProcessor") >= 0.95);
+        assert!(compute_similarity("OrderProcesor", "OrderProcessor") >= 0.85);
+        assert!(compute_similarity("validate_tokn", "validate_token") >= 0.85);
+        assert!(compute_similarity("something_completely_different", "OrderProcessor") < 0.40);
+    }
+
+    #[test]
+    fn test_find_symbol_global_fuzzy_fallback() {
+        let temp = tempfile::tempdir().unwrap();
+        let file = temp.path().join("billing.rs");
+        std::fs::write(
+            &file,
+            "pub struct OrderProcessor;\nimpl OrderProcessor {\n    pub fn process_order() {}\n}\n",
+        )
+        .unwrap();
+
+        // Exact typo that fails substring search
+        let typo_result = find_symbol_global("OrderProcesor", temp.path(), false, 10);
+        assert!(typo_result.contains("Did you mean one of these symbols?"));
+        assert!(typo_result.contains("OrderProcessor"));
+        assert!(typo_result.contains("billing.rs"));
+
+        // Non existent symbol with zero similarity
+        let nonexistent = find_symbol_global("XyzZqwUnknown", temp.path(), false, 10);
+        assert!(
+            nonexistent.contains("No symbols found matching 'XyzZqwUnknown' across the codebase.")
+        );
     }
 }

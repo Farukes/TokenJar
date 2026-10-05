@@ -186,6 +186,30 @@ def _find_symbol(content: str, language: str, symbol_name: str) -> str:
     res = _find_symbol_range(content, language, symbol_name)
     if res:
         return res[2]
+
+    # Fuzzy suggestion fallback for misspelled or slightly different symbol names
+    try:
+        from tokenjar.tools.symbol_index import SymbolIndexer, compute_similarity
+
+        symbols = SymbolIndexer.extract_symbols_from_code(content, language, "temp")
+        candidates = []
+        for s in symbols:
+            sim = compute_similarity(symbol_name, s.name)
+            if sim >= 0.50:
+                candidates.append((s.name, sim))
+        candidates.sort(key=lambda x: -x[1])
+        seen = set()
+        suggestions = []
+        for n, _ in candidates:
+            if n not in seen:
+                seen.add(n)
+                suggestions.append(n)
+        if suggestions:
+            top_sugg = suggestions[:3]
+            return f"Symbol '{symbol_name}' not found. Did you mean: {', '.join(top_sugg)}?"
+    except Exception:
+        pass
+
     return f"Symbol '{symbol_name}' not found."
 
 

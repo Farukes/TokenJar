@@ -8,6 +8,8 @@ from tokenjar.utils.token_counter import format_savings
 _cache = SessionCache()
 _config = load_config()
 
+MAX_OUTPUT_LINES = 80
+
 
 def read_file_smart(
     file_path: str,
@@ -95,9 +97,32 @@ def read_file_smart(
             found = _find_symbol_range(content, language, sym)
             if found:
                 start, end, _impl = found
-                slice_lines = [f"{i}: {line}" for i, line in enumerate(lines[start - 1 : end], start=start)]
+                full_slice = [f"{i}: {line}" for i, line in enumerate(lines[start - 1 : end], start=start)]
+                slice_key = f"{file_path}#sym:{sym}"
                 header = f"[TOKENJAR] Symbol '{sym}' found at lines {start}-{end} of {total} in '{file_path}':\n"
-                sliced_content = header + "\n".join(slice_lines)
+
+                raw_sliced = header + "\n".join(full_slice)
+                cached = _cache.get(slice_key, raw_sliced)
+                if cached.status == CacheStatus.UNCHANGED:
+                    savings = format_savings(content, cached.content)
+                    try:
+                        from tokenjar.telemetry.stats import tracker
+
+                        tracker.record_savings("cache", len(content) // 4, len(cached.content) // 4)
+                    except Exception:
+                        pass
+                    return f"{cached.content}\n\nToken savings: {savings}"
+
+                if len(full_slice) > MAX_OUTPUT_LINES and not force_full:
+                    p_end = start + MAX_OUTPUT_LINES - 1
+                    display = full_slice[:MAX_OUTPUT_LINES]
+                    notice = (
+                        f"\n\n[TOKENJAR PAGINATION] Showing lines {start}-{p_end} of {total}. (Remaining lines truncated to protect context window)\n"
+                        f"👉 To read next slice, call read_file_smart with start_line={p_end + 1}, end_line={min(end, p_end + MAX_OUTPUT_LINES)}."
+                    )
+                    sliced_content = header + "\n".join(display) + notice
+                else:
+                    sliced_content = raw_sliced
 
                 orig_tok = len(content) // 4
                 opt_tok = len(sliced_content) // 4
@@ -122,22 +147,34 @@ def read_file_smart(
         if match_line is not None:
             start = match_line
             end = min(total, start + 40)
-            slice_lines = [f"{i}: {line}" for i, line in enumerate(lines[start - 1 : end], start=start)]
+            full_slice = [f"{i}: {line}" for i, line in enumerate(lines[start - 1 : end], start=start)]
+            slice_key = f"{file_path}#sym:{sym}"
             header = f"[TOKENJAR] Symbol '{sym}' matched at line {start} (showing lines {start}-{end} of {total}) in '{file_path}':\n"
-            sliced_content = header + "\n".join(slice_lines)
+            raw_sliced = header + "\n".join(full_slice)
+
+            cached = _cache.get(slice_key, raw_sliced)
+            if cached.status == CacheStatus.UNCHANGED:
+                savings = format_savings(content, cached.content)
+                try:
+                    from tokenjar.telemetry.stats import tracker
+
+                    tracker.record_savings("cache", len(content) // 4, len(cached.content) // 4)
+                except Exception:
+                    pass
+                return f"{cached.content}\n\nToken savings: {savings}"
 
             orig_tok = len(content) // 4
-            opt_tok = len(sliced_content) // 4
+            opt_tok = len(raw_sliced) // 4
             if orig_tok > opt_tok:
-                savings = format_savings(content, sliced_content)
+                savings = format_savings(content, raw_sliced)
                 try:
                     from tokenjar.telemetry.stats import tracker
 
                     tracker.record_savings("slice", orig_tok, opt_tok)
                 except Exception:
                     pass
-                return f"{sliced_content}\n\nToken savings: {savings}"
-            return sliced_content
+                return f"{raw_sliced}\n\nToken savings: {savings}"
+            return raw_sliced
 
         return (
             f"[TOKENJAR] Symbol '{sym}' was not found in '{file_path}'. "
@@ -159,9 +196,32 @@ def read_file_smart(
         if start > end:
             return f"[TOKENJAR] Invalid line range: start_line ({start}) cannot be greater than end_line ({end})."
 
-        slice_lines = [f"{i}: {line}" for i, line in enumerate(lines[start - 1 : end], start=start)]
+        full_slice = [f"{i}: {line}" for i, line in enumerate(lines[start - 1 : end], start=start)]
+        slice_key = f"{file_path}#L{start}-{end}"
         header = f"[TOKENJAR] Lines {start}-{end} of {total} in '{file_path}':\n"
-        sliced_content = header + "\n".join(slice_lines)
+        raw_sliced = header + "\n".join(full_slice)
+
+        cached = _cache.get(slice_key, raw_sliced)
+        if cached.status == CacheStatus.UNCHANGED:
+            savings = format_savings(content, cached.content)
+            try:
+                from tokenjar.telemetry.stats import tracker
+
+                tracker.record_savings("cache", len(content) // 4, len(cached.content) // 4)
+            except Exception:
+                pass
+            return f"{cached.content}\n\nToken savings: {savings}"
+
+        if len(full_slice) > MAX_OUTPUT_LINES and not force_full:
+            p_end = start + MAX_OUTPUT_LINES - 1
+            display = full_slice[:MAX_OUTPUT_LINES]
+            notice = (
+                f"\n\n[TOKENJAR PAGINATION] Showing lines {start}-{p_end} of {total}. (Remaining lines truncated to protect context window)\n"
+                f"👉 To read next slice, call read_file_smart with start_line={p_end + 1}, end_line={min(end, p_end + MAX_OUTPUT_LINES)}."
+            )
+            sliced_content = header + "\n".join(display) + notice
+        else:
+            sliced_content = raw_sliced
 
         orig_tok = len(content) // 4
         opt_tok = len(sliced_content) // 4
@@ -188,6 +248,41 @@ def read_file_smart(
     result = _cache.get(file_path, content)
 
     if result.status == CacheStatus.FIRST_READ:
+        lines = content.splitlines()
+        total = len(lines)
+        is_lock = any(
+            file_path.endswith(s)
+            for s in (
+                "package-lock.json",
+                "yarn.lock",
+                "pnpm-lock.yaml",
+                "Cargo.lock",
+                "poetry.lock",
+                "composer.lock",
+                "Gemfile.lock",
+            )
+        )
+        if total > MAX_OUTPUT_LINES and not force_full and not is_lock:
+            p_end = MAX_OUTPUT_LINES
+            display = [f"{i}: {line}" for i, line in enumerate(lines[:p_end], start=1)]
+            header = f"[TOKENJAR] Showing lines 1-{p_end} of {total} in '{file_path}':\n"
+            notice = (
+                f"\n\n[TOKENJAR PAGINATION] Showing lines 1-{p_end} of {total}. (Remaining lines truncated to protect context window)\n"
+                f"👉 To read next slice, call read_file_smart with start_line={p_end + 1}, end_line={min(total, p_end + MAX_OUTPUT_LINES)} (or pass force_full=true)."
+            )
+            paginated = header + "\n".join(display) + notice
+            orig_tok = len(content) // 4
+            opt_tok = len(paginated) // 4
+            if orig_tok > opt_tok:
+                savings = format_savings(content, paginated)
+                try:
+                    from tokenjar.telemetry.stats import tracker
+
+                    tracker.record_savings("slice", orig_tok, opt_tok)
+                except Exception:
+                    pass
+                return f"{paginated}\n\nToken savings: {savings}"
+            return paginated
         return result.content
 
     savings = format_savings(content, result.content)

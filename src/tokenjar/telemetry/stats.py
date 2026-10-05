@@ -258,7 +258,7 @@ class TelemetryTracker:
         """Format a detailed categorical terminal dashboard of metrics."""
         d = self.data
         dollars = f"${d.estimated_dollars_saved:.2f}"
-        pct = f"%{d.savings_pct:.1f}"
+        pct = f"{d.savings_pct:.1f}%"
 
         orig_str = f"{d.total_original_tokens:,}"
         saved_str = f"{d.total_tokens_saved:,}"
@@ -269,7 +269,7 @@ class TelemetryTracker:
 
         def fmt_cat(name: str, stat: CategoryStats, unit: str) -> str:
             sav_str = f"{stat.saved:,} tokens saved"
-            pct_str = f"(%{stat.savings_pct:.1f})"
+            pct_str = f"({stat.savings_pct:.1f}%)"
             count_str = f"{stat.count} {unit}"
             return f"│  • {name:<22} {sav_str:<21} {pct_str:<7} │ {count_str:<12} │"
 

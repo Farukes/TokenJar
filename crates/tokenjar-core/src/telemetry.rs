@@ -210,7 +210,7 @@ impl TelemetryTracker {
     pub fn render_dashboard(&self) -> String {
         let d = self.get_data();
         let dollars = format!("${:.2}", d.estimated_dollars_saved());
-        let pct = format!("%{:.1}", d.savings_pct());
+        let pct = format!("{:.1}%", d.savings_pct());
 
         let cache_bytes = self.get_l2_cache_disk_bytes();
         let cache_mb = (cache_bytes as f64) / (1024.0 * 1024.0);

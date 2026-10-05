@@ -58,6 +58,9 @@ def test_find_symbol_python():
     assert "class MyClass:" in symbol_class
     assert "def __init__" in symbol_class
 
+    symbol_typo = _find_symbol(PYTHON_SAMPLE, "python", "do_somethng")
+    assert "Did you mean: do_something" in symbol_typo
+
 
 def test_unknown_language_fallback():
     skeleton = _build_skeleton(PYTHON_SAMPLE, "unknown")

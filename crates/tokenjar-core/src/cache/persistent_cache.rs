@@ -134,6 +134,30 @@ impl PersistentCache {
         Ok(symbols)
     }
 
+    pub fn get_all_symbols(&self, project_root: &str) -> Result<Vec<IndexedSymbol>> {
+        let conn = self.connect()?;
+        let mut stmt = conn.prepare(
+            "SELECT name, kind, file_path, line, signature, file_hash
+             FROM symbol_index
+             WHERE project_root = ?",
+        )?;
+        let rows = stmt.query_map(params![project_root], |row| {
+            Ok(IndexedSymbol {
+                name: row.get(0)?,
+                kind: row.get(1)?,
+                file_path: row.get(2)?,
+                line: row.get(3)?,
+                signature: row.get(4)?,
+                content_hash: row.get(5)?,
+            })
+        })?;
+        let mut symbols = Vec::new();
+        for s in rows {
+            symbols.push(s?);
+        }
+        Ok(symbols)
+    }
+
     pub fn set_file_symbols(
         &self,
         project_root: &str,

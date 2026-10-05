@@ -108,6 +108,21 @@ def calculate_tax(amount):
     out3 = find_symbol_global("NonExistentSymbol", str(tmp_path))
     assert "No symbols found" in out3
 
+    # Fuzzy suggestion when exact/substring match fails due to typo
+    out_fuzzy = find_symbol_global("OrderProcesor", str(tmp_path))
+    assert "Did you mean one of these symbols?" in out_fuzzy
+    assert "OrderProcessor" in out_fuzzy
+
+
+def test_compute_similarity():
+    from tokenjar.tools.symbol_index import compute_similarity
+
+    assert compute_similarity("OrderProcessor", "OrderProcessor") == 1.0
+    assert compute_similarity("order_processor", "OrderProcessor") >= 0.95
+    assert compute_similarity("OrderProcesor", "OrderProcessor") >= 0.85
+    assert compute_similarity("validate_tokn", "validate_token") >= 0.85
+    assert compute_similarity("something_completely_different", "OrderProcessor") < 0.40
+
 
 def test_find_symbol_references(tmp_path):
     from tokenjar.tools.symbol_index import find_symbol_references

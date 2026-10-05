@@ -202,3 +202,45 @@ def standalone_helper():
     # 2. Non-existent symbol
     res_missing = read_file_smart(file_path, symbol="non_existent_func")
     assert "Symbol 'non_existent_func' was not found" in res_missing
+
+
+def test_smart_reader_slice_caching(tmp_path):
+    mcp = MockMCP()
+    register_smart_reader_tools(mcp)
+    read_file_smart = mcp.tools["read_file_smart"]
+
+    test_file = tmp_path / "cache_test.txt"
+    lines = [f"line {i}" for i in range(1, 10)]
+    test_file.write_text("\n".join(lines), encoding="utf-8")
+    file_path = str(test_file)
+
+    # 1st read -> normal slice
+    r1 = read_file_smart(file_path, start_line=2, end_line=5)
+    assert "Lines 2-5 of 9" in r1
+
+    # 2nd read -> cache hit!
+    r2 = read_file_smart(file_path, start_line=2, end_line=5)
+    assert "[CACHED]" in r2
+    assert "unchanged since last read" in r2
+    assert "Token savings:" in r2
+
+
+def test_smart_reader_auto_pagination(tmp_path):
+    mcp = MockMCP()
+    register_smart_reader_tools(mcp)
+    read_file_smart = mcp.tools["read_file_smart"]
+
+    test_file = tmp_path / "large_file.txt"
+    lines = [f"Line {i}" for i in range(1, 121)]
+    test_file.write_text("\n".join(lines), encoding="utf-8")
+    file_path = str(test_file)
+
+    # Normal read without force_full -> auto-paginates to 80 lines
+    r = read_file_smart(file_path)
+    assert "[TOKENJAR PAGINATION] Showing lines 1-80 of 120" in r
+    assert "start_line=81, end_line=120" in r
+
+    # With force_full=True -> returns all lines
+    r_full = read_file_smart(file_path, force_full=True)
+    assert "[TOKENJAR PAGINATION]" not in r_full
+    assert "Line 120" in r_full
