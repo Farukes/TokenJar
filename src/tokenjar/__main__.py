@@ -100,9 +100,7 @@ def main() -> None:
     )
 
     # Subcommand: off
-    off_parser = subparsers.add_parser(
-        "off", help="Deactivate TokenJar in current project (cleans AGENTS.md rules)"
-    )
+    off_parser = subparsers.add_parser("off", help="Deactivate TokenJar in current project (cleans AGENTS.md rules)")
     off_parser.add_argument(
         "-g",
         "--global",

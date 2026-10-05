@@ -36,7 +36,7 @@ def generate_rules(compact_output: bool = True, prevent_truncation: bool = True)
         lines.extend(
             [
                 "4. **Output Optimization & Code Quality Mandate (STRICT):**",
-                "   - Targeted File Slices: When inspecting specific functions or line ranges, pass `symbol=\"function_name\"` or `start_line`/`end_line` to `read_file_smart` to avoid dumping whole files into context.",
+                '   - Targeted File Slices: When inspecting specific functions or line ranges, pass `symbol="function_name"` or `start_line`/`end_line` to `read_file_smart` to avoid dumping whole files into context.',
                 "   - Surgical File Edits: When modifying code, use surgical replacement blocks targeting precise line ranges instead of rewriting entire unchanged files.",
             ]
         )

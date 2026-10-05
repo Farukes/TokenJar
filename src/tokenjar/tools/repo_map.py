@@ -418,8 +418,19 @@ def get_repo_map(root_path: str = ".", max_tokens: int = 1000, focus_files: list
         map_tokens = len(output) // 4
         # Dynamically measure realistic exploration cost: physical size of manifests, readme and entrypoints
         candidate_files = [
-            "README.md", "README", "Cargo.toml", "pyproject.toml", "package.json", "go.mod", "Makefile",
-            "src/main.rs", "src/lib.rs", "src/tokenjar/server.py", "index.ts", "main.py", "app.py"
+            "README.md",
+            "README",
+            "Cargo.toml",
+            "pyproject.toml",
+            "package.json",
+            "go.mod",
+            "Makefile",
+            "src/main.rs",
+            "src/lib.rs",
+            "src/tokenjar/server.py",
+            "index.ts",
+            "main.py",
+            "app.py",
         ]
         manifest_tokens = 0
         for cf in candidate_files:
