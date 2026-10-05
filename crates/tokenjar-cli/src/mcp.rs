@@ -302,7 +302,8 @@ impl McpServer {
                         "force_full": { "type": "boolean", "default": false, "description": "If true, bypasses caching and lockfile shields." },
                         "query": { "type": ["string", "null"], "default": null, "description": "Optional search term for querying within lockfiles." },
                         "start_line": { "type": ["integer", "null"], "default": null, "description": "Optional starting line number (1-indexed, inclusive) to slice specific line ranges." },
-                        "end_line": { "type": ["integer", "null"], "default": null, "description": "Optional ending line number (1-indexed, inclusive) to slice specific line ranges." }
+                        "end_line": { "type": ["integer", "null"], "default": null, "description": "Optional ending line number (1-indexed, inclusive) to slice specific line ranges." },
+                        "symbol": { "type": ["string", "null"], "default": null, "description": "Optional name of a function, class, or method to extract directly. Instantly returns the full symbol implementation with line numbers, eliminating 2-step lookups and preventing output truncation." }
                     },
                     "required": ["file_path"]
                 }
@@ -445,12 +446,18 @@ impl McpServer {
                             .and_then(|lim| start_line.map(|s| s + lim as usize - 1))
                     });
 
+                let symbol = args
+                    .get("symbol")
+                    .or_else(|| args.get("symbol_name"))
+                    .and_then(|v| v.as_str());
+
                 Ok(read_file_smart(
                     file_path,
                     force_full,
                     query,
                     start_line,
                     end_line,
+                    symbol,
                     &self.cache,
                     &self.config,
                     &self.tracker,

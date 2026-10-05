@@ -15,6 +15,7 @@ def read_file_smart(
     query: str | None = None,
     start_line: int | None = None,
     end_line: int | None = None,
+    symbol: str | None = None,
 ) -> str:
     """Intelligently read a file with session-level caching, targeted line slicing, and lockfile protection.
 
@@ -26,6 +27,9 @@ def read_file_smart(
     Supports start_line and end_line (1-indexed, inclusive) to surgically inspect specific
     code ranges without dumping entire large files into context.
 
+    Supports symbol to extract a specific function, class, or method directly with line numbers,
+    avoiding 2-step lookups and preventing large output truncation.
+
     Auto-generated lockfiles (package-lock.json, Cargo.lock, poetry.lock, yarn.lock, etc.)
     and minified assets are automatically shielded to protect context windows from compaction.
 
@@ -35,6 +39,7 @@ def read_file_smart(
         query: Optional package name or keyword to surgically query inside lockfiles or large assets.
         start_line: Optional starting line number (1-indexed, inclusive).
         end_line: Optional ending line number (1-indexed, inclusive).
+        symbol: Optional name of a function, class, or method to extract directly.
 
     Returns:
         The full content, a short cached message, a unified diff, or a shielded summary.
@@ -75,6 +80,69 @@ def read_file_smart(
         content = read_file_text(file_path)
     except Exception as e:
         return f"Error reading file {file_path}: {e}"
+
+    # Direct symbol slicing support (targeted AST extraction)
+    if symbol and symbol.strip():
+        sym = symbol.strip()
+        lines = content.splitlines()
+        total = len(lines)
+        from tokenjar.utils.file_utils import detect_language
+
+        language = detect_language(file_path)
+        if language:
+            from tokenjar.tools.skeleton import _find_symbol_range
+
+            found = _find_symbol_range(content, language, sym)
+            if found:
+                start, end, _impl = found
+                slice_lines = [f"{i}: {line}" for i, line in enumerate(lines[start - 1 : end], start=start)]
+                header = f"[TOKENJAR] Symbol '{sym}' found at lines {start}-{end} of {total} in '{file_path}':\n"
+                sliced_content = header + "\n".join(slice_lines)
+
+                orig_tok = len(content) // 4
+                opt_tok = len(sliced_content) // 4
+                if orig_tok > opt_tok:
+                    savings = format_savings(content, sliced_content)
+                    try:
+                        from tokenjar.telemetry.stats import tracker
+
+                        tracker.record_savings("slice", orig_tok, opt_tok)
+                    except Exception:
+                        pass
+                    return f"{sliced_content}\n\nToken savings: {savings}"
+                return sliced_content
+
+        # Fallback for non-AST files or if symbol not found by AST: search line containing sym
+        match_line = None
+        for i, line in enumerate(lines):
+            if sym in line:
+                match_line = i + 1
+                break
+
+        if match_line is not None:
+            start = match_line
+            end = min(total, start + 40)
+            slice_lines = [f"{i}: {line}" for i, line in enumerate(lines[start - 1 : end], start=start)]
+            header = f"[TOKENJAR] Symbol '{sym}' matched at line {start} (showing lines {start}-{end} of {total}) in '{file_path}':\n"
+            sliced_content = header + "\n".join(slice_lines)
+
+            orig_tok = len(content) // 4
+            opt_tok = len(sliced_content) // 4
+            if orig_tok > opt_tok:
+                savings = format_savings(content, sliced_content)
+                try:
+                    from tokenjar.telemetry.stats import tracker
+
+                    tracker.record_savings("slice", orig_tok, opt_tok)
+                except Exception:
+                    pass
+                return f"{sliced_content}\n\nToken savings: {savings}"
+            return sliced_content
+
+        return (
+            f"[TOKENJAR] Symbol '{sym}' was not found in '{file_path}'. "
+            f"Tip: use 'tool_get_code_skeleton' to see available functions/classes or pass start_line and end_line."
+        )
 
     # Line slicing support (targeted range extraction)
     if start_line is not None or end_line is not None:
@@ -151,14 +219,16 @@ def register_smart_reader_tools(mcp) -> None:
         query: str | None = None,
         start_line: int | None = None,
         end_line: int | None = None,
+        symbol: str | None = None,
     ) -> str:
-        """Intelligently read a file with session-level caching, targeted line slicing, and lockfile protection."""
+        """Intelligently read a file with session-level caching, targeted line slicing, lockfile protection, and instant symbol extraction."""
         return _cache_read_impl(
             file_path,
             force_full=force_full,
             query=query,
             start_line=start_line,
             end_line=end_line,
+            symbol=symbol,
         )
 
     @mcp.tool()

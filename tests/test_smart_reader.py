@@ -156,3 +156,41 @@ def test_smart_reader_line_slicing(tmp_path):
     # 3. Invalid range (start > end)
     res_inv = read_file_smart(file_path, start_line=7, end_line=4)
     assert "Invalid line range" in res_inv
+
+
+def test_smart_reader_symbol_slicing(tmp_path):
+    mcp = MockMCP()
+    register_smart_reader_tools(mcp)
+    read_file_smart = mcp.tools["read_file_smart"]
+
+    code = """class OrderProcessor:
+    def __init__(self):
+        self.orders = []
+
+    def calculate_discount(self, total: float) -> float:
+        if total > 100.0:
+            return total * 0.1
+        return 0.0
+
+    def process_order(self, order_id: str) -> bool:
+        return True
+
+def standalone_helper():
+    return 42
+"""
+    test_file = tmp_path / "orders.py"
+    test_file.write_text(code, encoding="utf-8")
+    file_path = str(test_file)
+
+    # 1. Extract calculate_discount symbol directly
+    res = read_file_smart(file_path, symbol="calculate_discount")
+    assert "Symbol 'calculate_discount' found at lines 5-8" in res
+    assert "def calculate_discount(self, total: float) -> float:" in res
+    assert "return total * 0.1" in res
+    assert "class OrderProcessor" not in res
+    assert "standalone_helper" not in res
+    assert "Token savings:" in res
+
+    # 2. Non-existent symbol
+    res_missing = read_file_smart(file_path, symbol="non_existent_func")
+    assert "Symbol 'non_existent_func' was not found" in res_missing

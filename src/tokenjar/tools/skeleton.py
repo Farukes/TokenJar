@@ -123,11 +123,11 @@ def _build_skeleton(source_code: str, language: str) -> str:
     return result_bytes.decode("utf-8")
 
 
-def _find_symbol(source_code: str, language: str, symbol_name: str) -> str:
-    """Finds and returns the full text of a symbol by name."""
+def _find_symbol_range(source_code: str, language: str, symbol_name: str) -> tuple[int, int, str] | None:
+    """Finds and returns (start_line, end_line, implementation) of a symbol by name."""
     tree = parse_code(source_code, language)
     if not tree:
-        return ""
+        return None
 
     root_node = tree.root_node
     source_bytes = source_code.encode("utf-8")
@@ -170,7 +170,8 @@ def _find_symbol(source_code: str, language: str, symbol_name: str) -> str:
         ]:
             name = get_node_name(node)
             if name == symbol_name:
-                return source_bytes[node.start_byte : node.end_byte].decode("utf-8", errors="replace")
+                impl = source_bytes[node.start_byte : node.end_byte].decode("utf-8", errors="replace")
+                return (node.start_point[0] + 1, node.end_point[0] + 1, impl)
 
         for child in node.children:
             res = walk(child)
@@ -178,8 +179,14 @@ def _find_symbol(source_code: str, language: str, symbol_name: str) -> str:
                 return res
         return None
 
-    res = walk(root_node)
-    return res if res else f"Symbol '{symbol_name}' not found."
+    return walk(root_node)
+
+
+def _find_symbol(content: str, language: str, symbol_name: str) -> str:
+    res = _find_symbol_range(content, language, symbol_name)
+    if res:
+        return res[2]
+    return f"Symbol '{symbol_name}' not found."
 
 
 def get_code_skeleton(file_path: str) -> str:

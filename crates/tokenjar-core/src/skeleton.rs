@@ -216,6 +216,15 @@ pub fn find_symbol_in_code(
     lang: SupportedLanguage,
     symbol_name: &str,
 ) -> Option<String> {
+    find_symbol_range_in_code(source_code, lang, symbol_name).map(|(_, _, s)| s)
+}
+
+/// Finds a specific function, class, or method by name, returning (start_line, end_line, implementation).
+pub fn find_symbol_range_in_code(
+    source_code: &str,
+    lang: SupportedLanguage,
+    symbol_name: &str,
+) -> Option<(usize, usize, String)> {
     let tree = parse_code(source_code, lang)?;
     let source_bytes = source_code.as_bytes();
 
@@ -244,7 +253,11 @@ pub fn find_symbol_in_code(
         None
     }
 
-    fn walk(node: tree_sitter::Node, source_bytes: &[u8], target_name: &str) -> Option<String> {
+    fn walk(
+        node: tree_sitter::Node,
+        source_bytes: &[u8],
+        target_name: &str,
+    ) -> Option<(usize, usize, String)> {
         let node_kind = node.kind();
         let is_target_def = matches!(
             node_kind,
@@ -269,7 +282,9 @@ pub fn find_symbol_in_code(
                     if let Ok(full_impl) =
                         std::str::from_utf8(&source_bytes[node.start_byte()..node.end_byte()])
                     {
-                        return Some(full_impl.to_string());
+                        let start_line = node.start_position().row + 1;
+                        let end_line = node.end_position().row + 1;
+                        return Some((start_line, end_line, full_impl.to_string()));
                     }
                 }
             }
