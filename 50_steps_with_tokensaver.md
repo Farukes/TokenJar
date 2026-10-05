@@ -218,7 +218,7 @@ Allows safe installati...
 - **Nasıl Optimize Edildi:** Standart AI dosyanın tamamını okurken TokenJar yalnızca L12-24 aralığını dilimler.
 - **Modele Giden Optimize İçerik Önizlemesi:**
 ```text
-[TOKENJAR] Lines 12-24 of 44 in 'C:\Users\omere\Desktop\Github\Token-Saver\crates\tokenjar-core\src\token_counter.rs':
+[TOKENJAR] Lines 12-24 of 44 in 'crates\tokenjar-core\src\token_counter.rs':
 12: /// Format token savings summary string.
 13: pub fn format_savings(original: ...
 ```
@@ -229,7 +229,7 @@ Allows safe installati...
 - **Nasıl Optimize Edildi:** 870 satır yerine yalnızca ilgilenilen 55 satırlık fonksiyon bağlama yüklenir.
 - **Modele Giden Optimize İçerik Önizlemesi:**
 ```text
-[TOKENJAR] Lines 520-575 of 870 in 'C:\Users\omere\Desktop\Github\Token-Saver\src\tokenjar\hooks\manager.py':
+[TOKENJAR] Lines 520-575 of 870 in 'src\tokenjar\hooks\manager.py':
 520:         # Ensure CLI binary directory is in user's PATH
 521:         path_ok, path_ms...
 ```
@@ -256,7 +256,7 @@ class RulesManager:
 - **Nasıl Optimize Edildi:** Regex filtre kuralları tüm dosya okunmadan hedeflenerek çekilir.
 - **Modele Giden Optimize İçerik Önizlemesi:**
 ```text
-[TOKENJAR] Lines 25-75 of 178 in 'C:\Users\omere\Desktop\Github\Token-Saver\src\tokenjar\tools\output_pruner.py':
+[TOKENJAR] Lines 25-75 of 178 in 'src\tokenjar\tools\output_pruner.py':
 25:     build_filtered = detect_and_filter_build(output)
 26:     if build_filtered is ...
 ```
@@ -267,7 +267,7 @@ class RulesManager:
 - **Nasıl Optimize Edildi:** Veritabanı DDL ve tablo oluşturma blokları dilimlenerek okunur.
 - **Modele Giden Optimize İçerik Önizlemesi:**
 ```text
-[TOKENJAR] Lines 40-90 of 371 in 'C:\Users\omere\Desktop\Github\Token-Saver\src\tokenjar\cache\persistent_cache.py':
+[TOKENJAR] Lines 40-90 of 371 in 'src\tokenjar\cache\persistent_cache.py':
 40:                 conn.execute(
 41:                     """
 42:                  ...

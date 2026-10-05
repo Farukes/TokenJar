@@ -100,7 +100,7 @@ license = "BUS...
 - **Neden Bu Kadar Yüksek:** Standart AI ana giriş dosyalarını tek tek okumaya çalışırken TokenJar tek bir PageRank haritası ile tüm mimariyi aktarır.
 - **Modele Giren Ham İçerik Önizlemesi:**
 ```text
-// File: C:\Users\omere\Desktop\Github\Token-Saver\Cargo.toml
+// File: Cargo.toml
 [workspace]
 members = [
     "crates/tokenjar-core",
