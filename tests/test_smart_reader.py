@@ -173,7 +173,15 @@ def test_smart_reader_symbol_slicing(tmp_path):
         return 0.0
 
     def process_order(self, order_id: str) -> bool:
+        \"\"\"Processes payment and prints receipts.\"\"\"
+        print(f"Processing order: {order_id}")
         return True
+
+    def calculate_tax(self, amount: float) -> float:
+        return amount * 0.20
+
+    def refund_order(self, order_id: str) -> dict:
+        return {"status": "REFUNDED", "order_id": order_id}
 
 def standalone_helper():
     return 42
