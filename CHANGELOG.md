@@ -34,6 +34,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Surgically removes TokenJar steering rules from `AGENTS.md` without ever touching or modifying user custom instructions or source code.
   - Backward-compatible cleanup across all legacy prototypes and version tags.
 
+- **Modernized CLI Commands & Migration Suite:**
+  - Streamlined developer CLI commands with clean, intuitive semantics (full backward compatibility preserved via aliases):
+    - `tokenjar on` / `off`: Replaces `init-rules` / `inject`. Toggles `AGENTS.md` rules per project.
+    - `tokenjar on --global` / `off --global`: Replaces `install-mcp` / `uninstall-mcp`. Configures MCP globally across all IDEs.
+    - `tokenjar enable` / `disable`: Explicit IDE MCP registration toggle.
+    - `tokenjar clean`: Unified cache & metrics management (supports `--cache` and `--stats`).
+    - `tokenjar update`: Self-updater that upgrades binary, re-syncs IDEs, and updates project rules.
+    - `tokenjar uninstall`: Zero-trace uninstaller.
+    - `tokenjar output on` / `off`: Toggles compact diffs and zero-truncation mandate.
+
 ### 🧪 Benchmarks & Stress Test Metrics
 
 - **50-Step Real-Life Developer Scenario:**
