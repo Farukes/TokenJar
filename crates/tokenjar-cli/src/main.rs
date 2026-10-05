@@ -314,6 +314,19 @@ async fn main() {
             let _ = tokenjar_core::installer::install_all_slash_commands(true);
             println!("  🟢 Slash Commands: Configured /tokenjar in Antigravity and Claude Code");
 
+            // 4. Synchronize rules across existing projects
+            let known_roots = tokenjar_core::rules::get_known_project_roots();
+            let mut updated_projects = 0;
+            for root in &known_roots {
+                let res = install_rules(root, true, true);
+                if res.iter().any(|r| r.success) {
+                    updated_projects += 1;
+                }
+            }
+            if updated_projects > 0 {
+                println!("  🟢 Project Rules: Synchronized latest AGENTS.md across {updated_projects} active project(s).");
+            }
+
             println!("\n✨ TokenJar has been successfully installed & activated globally!");
             println!("💡 To activate in any project and generate AGENTS.md, run:");
             println!("     tokenjar on");
@@ -751,6 +764,24 @@ fn handle_update(force: bool) {
                     }
 
                     println!("\n🎉 TokenJar executable successfully updated to v{latest_version}!");
+
+                    // Automatically synchronize IDE MCP configs, slash commands, and project steering rules
+                    println!("🔄 Synchronizing IDE configurations, slash commands, and project rules...");
+                    let _ = install_mcp_all(false, None);
+                    let _ = tokenjar_core::installer::install_all_slash_commands(true);
+
+                    let known_roots = tokenjar_core::rules::get_known_project_roots();
+                    let mut updated_projects = 0;
+                    for root in &known_roots {
+                        let res = install_rules(root, true, true);
+                        if res.iter().any(|r| r.success) {
+                            updated_projects += 1;
+                        }
+                    }
+                    if updated_projects > 0 {
+                        println!("  🟢 Project Rules: Synchronized latest AGENTS.md across {updated_projects} active project(s).");
+                    }
+
                     println!("💡 Tip: Restart any open AI coding sessions or IDE windows to load updated middleware.");
                     return;
                 }

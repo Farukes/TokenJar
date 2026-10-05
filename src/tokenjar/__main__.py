@@ -435,6 +435,19 @@ def main() -> None:
 
         HookManager.install_all_slash_commands(only_installed=True)
         print("  🟢 Slash Commands: Configured /tokenjar in Antigravity and Claude Code")
+
+        from tokenjar.rules.manager import RulesManager
+
+        known = RulesManager.get_known_project_roots()
+        updated_count = 0
+        for root in known:
+            if root.exists():
+                res = RulesManager.install_rules(root)
+                if any(r.success for r in res):
+                    updated_count += 1
+        if updated_count > 0:
+            print(f"  🟢 Project Rules: Synchronized latest AGENTS.md across {updated_count} active project(s).")
+
         print("\n✨ TokenJar has been successfully installed & activated globally!")
         print("💡 To activate in any project and generate AGENTS.md, run:")
         print("     tokenjar on")
@@ -672,6 +685,24 @@ def main() -> None:
             if res.returncode == 0:
                 target_v = latest_version or "latest"
                 print(f"\n🎉 TokenJar has been successfully updated to v{target_v}!")
+
+                from tokenjar.hooks.manager import HookManager
+                from tokenjar.rules.manager import RulesManager
+
+                print("🔄 Synchronizing IDE configurations, slash commands, and project rules...")
+                HookManager.enable_all(only_installed=True)
+                HookManager.install_all_slash_commands(only_installed=True)
+
+                known = RulesManager.get_known_project_roots()
+                updated_count = 0
+                for root in known:
+                    if root.exists():
+                        res = RulesManager.install_rules(root)
+                        if any(r.success for r in res):
+                            updated_count += 1
+                if updated_count > 0:
+                    print(f"  🟢 Project Rules: Synchronized latest AGENTS.md across {updated_count} active project(s).")
+
                 print("💡 Tip: Restart any open AI coding sessions or IDE windows to load updated middleware.")
             else:
                 print(f"\n❌ Pip update command returned error:\n{res.stderr or res.stdout}")
