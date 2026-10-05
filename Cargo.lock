@@ -1254,7 +1254,7 @@ dependencies = [
 
 [[package]]
 name = "tokenjar"
-version = "1.0.3"
+version = "1.1.0"
 dependencies = [
  "clap",
  "dirs",
@@ -1271,7 +1271,7 @@ dependencies = [
 
 [[package]]
 name = "tokenjar-core"
-version = "1.0.3"
+version = "1.1.0"
 dependencies = [
  "chrono",
  "dirs",

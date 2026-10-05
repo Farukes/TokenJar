@@ -24,6 +24,8 @@ if hasattr(sys.stderr, "reconfigure"):
 
 def main() -> None:
     """Main CLI entry point for TokenJar."""
+    from tokenjar import __version__
+
     parser = argparse.ArgumentParser(
         prog="tokenjar",
         description="TokenJar: Zero-cost token optimization engine for AI coding assistants and developers.",
@@ -32,7 +34,7 @@ def main() -> None:
         "-v",
         "--version",
         action="version",
-        version="tokenjar 1.0.2",
+        version=f"tokenjar {__version__}",
         help="Show program's version number and exit",
     )
     subparsers = parser.add_subparsers(dest="subcommand", metavar="<command>", help="Available subcommands")
@@ -281,7 +283,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.subcommand == "version":
-        print("tokenjar 1.0.2")
+        print(f"tokenjar {__version__}")
         return
 
     if args.subcommand in (None, "server"):

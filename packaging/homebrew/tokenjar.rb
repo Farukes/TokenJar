@@ -1,7 +1,7 @@
 class TokenJar < Formula
   desc "Zero-cost, zero-latency token optimization engine and intelligent MCP middleware"
   homepage "https://github.com/Farukes/TokenJar"
-  version "1.0.3"
+  version "1.1.0"
   license "BUSL-1.1"
 
   on_macos do

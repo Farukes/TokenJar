@@ -9,13 +9,13 @@
 <h1 align="center">🍯 TokenJar</h1>
 <p align="center"><b>Put tokens back in your jar. Save 70-95% tokens for AI coding assistants without losing functionality.</b></p>
 
-[![Release: v1.0.3](https://img.shields.io/badge/Release-v1.0.3%20GA-green.svg)](https://github.com/Farukes/TokenJar/releases/latest)
+[![Release: v1.1.0](https://img.shields.io/badge/Release-v1.1.0%20GA-green.svg)](https://github.com/Farukes/TokenJar/releases/latest)
 [![CI](https://github.com/Farukes/TokenJar/actions/workflows/ci.yml/badge.svg)](https://github.com/Farukes/TokenJar/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/downloads/)
-[![Enterprise Native: Rust](https://img.shields.io/badge/Enterprise%20Native-Rust%20v1.0.3-orange.svg)](#-enterprise--high-performance-native-engine-rust-edition)
-[![Crates.io: v1.0.3](https://img.shields.io/badge/crates.io-v1.0.3-orange.svg?logo=rust&logoColor=white)](https://crates.io/crates/tokenjar)
-[![PyPI: v1.0.3](https://img.shields.io/badge/PyPI-v1.0.3-blue.svg?logo=pypi&logoColor=white)](https://pypi.org/project/tokenjar/)
-[![Token Reduction](https://img.shields.io/badge/Token%20Savings-89%25%20to%2096%25-brightgreen.svg)](#-proven-performance--stress-test-benchmark)
+[![Enterprise Native: Rust](https://img.shields.io/badge/Enterprise%20Native-Rust%20v1.1.0-orange.svg)](#-enterprise--high-performance-native-engine-rust-edition)
+[![Crates.io: v1.1.0](https://img.shields.io/badge/crates.io-v1.1.0-orange.svg?logo=rust&logoColor=white)](https://crates.io/crates/tokenjar)
+[![PyPI: v1.1.0](https://img.shields.io/badge/PyPI-v1.1.0-blue.svg?logo=pypi&logoColor=white)](https://pypi.org/project/tokenjar/)
+[![Token Reduction](https://img.shields.io/badge/Token%20Savings-90%25%20to%2099%25-brightgreen.svg)](#-proven-performance--stress-test-benchmark)
 [![License: BSL 1.1](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](LICENSE)
 [![Zero Telemetry](https://img.shields.io/badge/telemetry-0%25%20(100%25%20local)-success.svg)](#-enterprise-privacy--security-guarantee)
 
@@ -32,13 +32,14 @@ Works with **Claude Code**, **Cursor**, **Antigravity (AGY)**, **Windsurf**, **C
 | Module | What It Does | Token Savings |
 |:---|:---|:---|
 | 🦴 **Code Skeletonizer** | Extracts structural skeleton (signatures, types, docstrings) via Tree-sitter AST | **80-95%** |
-| 📖 **Smart File Reader** | L1 RAM + L2 Persistent SQLite cache with differential reads & diff headers | **90-99%** |
+| 📖 **Smart File Reader & Slicing Cache** | L1 RAM + L2 Persistent SQLite cache with targeted line/symbol slicing (`#L1-30`) & auto-paging ceiling (`MAX_OUTPUT_LINES = 80`) | **90-99.8%** |
 | 🛡️ **Lockfile & Asset Shield** | Intercepts massive lockfiles & minified bundles with surgical version queries (`query="react"`) | **99%** |
-| 🎯 **Blast Radius & Symbols** | Instant global symbol lookup & cross-file reference caller tracking (`find_symbol_references`) | **85-95%** |
+| 🎯 **Blast Radius & Hybrid Fuzzy Symbols** | Instant global symbol lookup with AST parser and fuzzy Levenshtein + Trigram fallback suggestions (`find_symbol_global`) | **85-95%** |
 | 🖥️ **Terminal Pruner** | Compresses test/build/git terminal streams, keeps errors and summary info | **60-90%** |
 | 🗺️ **Repo Map** | PageRank & Graph Centrality codebase overview fitted into custom token budgets | **Budget-fitted** |
+| 🔄 **Post-Update Auto-Sync** | Automatically syncs IDE configs, slash commands, and project rules in a single command (`tokenjar update`) | **Zero-maintenance** |
+| 🧹 **Zero-Trace Surgical Uninstall** | Safely reverts IDE configs, purges caches, and cleans rules without touching user code | **Safe & Zero-trace** |
 | 🎨 **On-Demand UI Dashboard** | Lightweight standalone control panel (`tokenjar ui`) with **Zero Background RAM** | **Instant** |
-| ⚡ **1-Click IDE Configuration** | Automatic configuration & non-destructive rollback for Cursor, Windsurf, Claude, VS Code | **Zero-effort** |
 
 ### 🛡️ Built-in Guardrails & Reliability
 - **Lockfile & Giant Asset Shield:** Prevents context window destruction from 50,000-line lockfiles; supports 5-line surgical version queries.

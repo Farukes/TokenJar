@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tokenjar"
-version = "1.0.3"
+version = "1.1.0"
 description = "MCP server that saves 70-95% tokens for AI coding assistants without losing functionality"
 readme = "README.md"
 license = {text = "BSL-1.1"}
