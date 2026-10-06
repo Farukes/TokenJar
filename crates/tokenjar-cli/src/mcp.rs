@@ -360,14 +360,14 @@ impl McpServer {
             },
             {
                 "name": "run_command_smart",
-                "description": "Executes a shell command and returns intelligently filtered output. Prunes test runners and build output to minimize token consumption. For heavy compilation or workspace-wide builds, run in native terminal and pipe to filter_output to avoid MCP channel stalls.",
+                "description": "Executes a shell command and returns intelligently filtered output. Prunes test runners and build output to minimize token consumption. For background services, long-running servers, bots, streamers, or watchers, ALWAYS set background=true to avoid blocking the agent. For heavy compilation or workspace-wide builds, run in native terminal and pipe to filter_output.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "command": { "type": "string", "description": "Shell command line to execute." },
                         "cwd": { "type": "string", "default": ".", "description": "Working directory." },
-                        "timeout": { "type": "integer", "default": 120, "description": "Timeout in seconds." },
-                        "background": { "type": "boolean", "default": false, "description": "If true, spawns as a background task." }
+                        "timeout": { "type": "integer", "default": 60, "description": "Timeout in seconds for synchronous execution." },
+                        "background": { "type": "boolean", "default": false, "description": "Set to true for long-running servers, bots, streamers, or daemons to avoid blocking." }
                     },
                     "required": ["command"]
                 }

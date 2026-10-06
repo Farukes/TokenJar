@@ -235,10 +235,10 @@ def test_smart_reader_auto_pagination(tmp_path):
     test_file.write_text("\n".join(lines), encoding="utf-8")
     file_path = str(test_file)
 
-    # Normal read without force_full -> auto-paginates to 80 lines
+    # Normal read without force_full -> auto-paginates to 40 lines
     r = read_file_smart(file_path)
-    assert "[TOKENJAR PAGINATION] Showing lines 1-80 of 120" in r
-    assert "start_line=81, end_line=120" in r
+    assert "[TOKENJAR PAGINATION] Showing lines 1-40 of 120" in r
+    assert "start_line=41, end_line=80" in r
 
     # With force_full=True -> returns all lines
     r_full = read_file_smart(file_path, force_full=True)

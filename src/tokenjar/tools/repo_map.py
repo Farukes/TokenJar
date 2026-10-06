@@ -461,6 +461,9 @@ def get_directory_tree(root_path: str = ".", max_depth: int = 4) -> str:
     lines = []
 
     def walk_tree(current_dir: Path, depth: int, prefix: str = ""):
+        if len(lines) >= 60:
+            return
+
         if depth > max_depth:
             lines.append(f"{prefix}...")
             return
@@ -483,8 +486,18 @@ def get_directory_tree(root_path: str = ".", max_depth: int = 4) -> str:
                 if not is_binary(str(item)):
                     filtered_items.append(item)
 
-        for i, item in enumerate(filtered_items):
-            is_last = i == len(filtered_items) - 1
+        total_count = len(filtered_items)
+        if total_count > 15:
+            display_items = filtered_items[:10]
+            truncated_count = total_count - 10
+        else:
+            display_items = filtered_items
+            truncated_count = 0
+
+        for i, item in enumerate(display_items):
+            if len(lines) >= 60:
+                break
+            is_last = (i == len(display_items) - 1) and (truncated_count == 0)
             connector = "└── " if is_last else "├── "
 
             if item.is_dir():
@@ -494,8 +507,16 @@ def get_directory_tree(root_path: str = ".", max_depth: int = 4) -> str:
             else:
                 lines.append(f"{prefix}{connector}{item.name}")
 
+        if truncated_count > 0 and len(lines) < 60:
+            lines.append(f"{prefix}└── ... (+{truncated_count} more items)")
+
     lines.append(f"{root.name}/")
     walk_tree(root, 1)
+
+    if len(lines) >= 60:
+        lines.append(
+            "\n... [TokenJar Guard: Directory tree capped at 60 entries. Use get_directory_tree_tool with subpath or smaller max_depth] ..."
+        )
 
     return "\n".join(lines)
 

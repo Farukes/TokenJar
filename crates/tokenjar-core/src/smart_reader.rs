@@ -12,7 +12,10 @@ use crate::telemetry::TelemetryTracker;
 use crate::token_counter::format_savings;
 
 /// Maximum lines per read slice before auto-pagination kicks in (protects IDE context).
-pub const MAX_OUTPUT_LINES: usize = 80;
+pub const MAX_OUTPUT_LINES: usize = 40;
+
+/// Maximum bytes per read slice before auto-pagination kicks in (prevents framework output.txt dumping).
+pub const MAX_OUTPUT_BYTES: usize = 2500;
 
 /// Intelligently reads a file with session caching, line slicing, and lockfile protection.
 #[allow(clippy::too_many_arguments)]
@@ -236,18 +239,35 @@ pub fn read_file_smart(
             return format!("{}\n\nToken savings: {savings_msg}", entry.content);
         }
 
-        // Auto-pagination if requested slice is > MAX_OUTPUT_LINES
-        let (display_slice, paginated) = if slice_lines.len() > MAX_OUTPUT_LINES && !force_full {
-            let p_end = start + MAX_OUTPUT_LINES - 1;
-            (
-                &slice_lines[..MAX_OUTPUT_LINES],
-                Some(format!(
-                    "\n\n[TOKENJAR PAGINATION] Showing lines {start}-{p_end} of {total}. (Remaining lines truncated to protect context window)\n\
-                     👉 To read the next slice, call read_file_smart with start_line={}, end_line={}.",
-                    p_end + 1,
-                    (p_end + MAX_OUTPUT_LINES).min(end)
-                )),
-            )
+        // Auto-pagination if requested slice is > MAX_OUTPUT_LINES or > MAX_OUTPUT_BYTES
+        let (display_slice, paginated) = if !force_full {
+            let mut take_count = 0;
+            let mut byte_accum = 0;
+            for line in slice_lines.iter() {
+                if take_count >= MAX_OUTPUT_LINES || (take_count > 0 && byte_accum + line.len() > MAX_OUTPUT_BYTES) {
+                    break;
+                }
+                byte_accum += line.len() + 1;
+                take_count += 1;
+            }
+            if take_count == 0 {
+                take_count = 1.min(slice_lines.len());
+            }
+
+            if take_count < slice_lines.len() {
+                let p_end = start + take_count - 1;
+                (
+                    &slice_lines[..take_count],
+                    Some(format!(
+                        "\n\n[TOKENJAR PAGINATION] Showing lines {start}-{p_end} of {total}. (Remaining lines truncated to protect context window)\n\
+                         👉 To read the next slice, call read_file_smart with start_line={}, end_line={}.",
+                        p_end + 1,
+                        (p_end + MAX_OUTPUT_LINES).min(end)
+                    )),
+                )
+            } else {
+                (&slice_lines[..], None)
+            }
         } else {
             (&slice_lines[..], None)
         };
@@ -289,8 +309,19 @@ pub fn read_file_smart(
         let is_lock = config.is_lockfile(p)
             || file_path.ends_with(".lock")
             || file_path.ends_with("package-lock.json");
-        if total > MAX_OUTPUT_LINES && !force_full && !is_lock {
-            let p_end = MAX_OUTPUT_LINES;
+
+        let mut take_count = 0;
+        let mut byte_accum = 0;
+        for line in lines.iter() {
+            if take_count >= MAX_OUTPUT_LINES || (take_count > 0 && byte_accum + line.len() > MAX_OUTPUT_BYTES) {
+                break;
+            }
+            byte_accum += line.len() + 1;
+            take_count += 1;
+        }
+
+        if take_count < total && !force_full && !is_lock {
+            let p_end = take_count;
             let slice_lines: Vec<String> = lines[..p_end]
                 .iter()
                 .enumerate()
@@ -582,12 +613,12 @@ def standalone_helper():
 
         let p_str = file_path.to_str().unwrap();
 
-        // Normal read -> auto-paginates to 80 lines
+        // Normal read -> auto-paginates to 40 lines
         let r = read_file_smart(
             p_str, false, None, None, None, None, &cache, &config, &tracker,
         );
-        assert!(r.contains("[TOKENJAR PAGINATION] Showing lines 1-80 of 120"));
-        assert!(r.contains("start_line=81, end_line=120"));
+        assert!(r.contains("[TOKENJAR PAGINATION] Showing lines 1-40 of 120"));
+        assert!(r.contains("start_line=41, end_line=80"));
 
         // With force_full=true -> returns all 120 lines without pagination notice
         let r_full = read_file_smart(

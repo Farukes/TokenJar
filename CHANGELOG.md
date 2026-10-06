@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatically regenerates slash command definitions (`/tokenjar` in AGY and Claude Code).
   - Automatically scans all registered projects in `~/.tokenjar/projects.json` and updates existing `AGENTS.md` and `.cursorrules` steering blocks in-place with the latest guidelines.
 
+- **Windows Runtime & Buffer Interception Hardening:**
+  - **Windows Quote Preservation (`cmd.exe /C`):** Replaced default Windows argument escaping with `raw_arg("/C ...")` in Rust and clean environment forwarding in Python, resolving `SyntaxError: unterminated string literal` on single and double quotes.
+  - **Console UTF-8 Injection:** Injected `PYTHONIOENCODING=utf-8` and `PYTHONUTF8=1` into child process execution environments, eliminating `UnicodeEncodeError` crashes on Windows `cp1254`/OEM code pages.
+  - **Directory Tree Guardrails:** Expanded directory skip list with `data`, `logs`, `dist`, `build`, `.venv`, `.cache`, added a 15-item per-directory truncation cap (`... +N more items`), and a 60-line global circuit breaker to `get_directory_tree_tool`.
+  - **Context Interception Protection:** Lowered smart reader auto-paging ceiling to 40 lines and added a 2,500-byte accumulation guard (`MAX_OUTPUT_BYTES = 2500`), preventing IDE frameworks (Gemini / Antigravity) from intercepting tool payloads into external `output.txt` files.
+  - **Daemon/Watcher Non-Blocking Steering:** Enhanced `run_command_smart` schema and agent steering guidelines to mandate `background=true` for continuous servers, bots, and file watchers, with responsive timeout diagnostic messages.
+
 - **Universal Zero-Trace Surgical Uninstall:**
   - `tokenjar uninstall` (or `tokenjar purge`) guarantees complete, zero-trace removal.
   - Safely reverts IDE MCP configurations, restores backups (`.ts_bak`), removes terminal hooks, and purges `~/.tokenjar` SQLite databases.

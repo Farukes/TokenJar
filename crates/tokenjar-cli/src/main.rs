@@ -512,7 +512,17 @@ async fn main() {
                 eprintln!("Error: No command specified to run.");
                 std::process::exit(1);
             }
-            let cmd_str = command.join(" ");
+            let cmd_str = command
+                .iter()
+                .map(|arg| {
+                    if arg.contains(' ') && !arg.starts_with('"') && !arg.starts_with('\'') {
+                        format!("\"{arg}\"")
+                    } else {
+                        arg.clone()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(" ");
             let output = run_command_smart(&cmd_str, ".", 120, false, &tracker);
             println!("{output}");
         }

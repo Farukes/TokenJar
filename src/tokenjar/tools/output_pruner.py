@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 
 from tokenjar.filters.ansi import strip_ansi
@@ -122,9 +123,13 @@ def register_output_pruner_tools(mcp):
         Use this tool instead of raw shell commands when you want to minimize token usage
         from verbose CLI outputs like tests, builds, and package managers.
 
-        Set background=True to launch dev servers, daemons, or long-running watchers
-        without blocking the agent.
+        For background services, long-running servers, bots, streamers, or watchers,
+        ALWAYS pass background=True to avoid blocking the agent.
         """
+        sub_env = os.environ.copy()
+        sub_env["PYTHONIOENCODING"] = "utf-8"
+        sub_env["PYTHONUTF8"] = "1"
+
         if background:
             try:
                 proc = subprocess.Popen(
@@ -133,6 +138,7 @@ def register_output_pruner_tools(mcp):
                     shell=True,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
+                    env=sub_env,
                 )
                 return f"[BACKGROUND PROCESS LAUNCHED] PID: {proc.pid} | Command: {command}"
             except Exception as e:
@@ -145,6 +151,7 @@ def register_output_pruner_tools(mcp):
                 shell=True,
                 capture_output=True,
                 timeout=timeout,
+                env=sub_env,
             )
             stdout_str = (result.stdout or b"").decode("utf-8", errors="replace")
             stderr_str = (result.stderr or b"").decode("utf-8", errors="replace")
@@ -165,7 +172,10 @@ def register_output_pruner_tools(mcp):
             )
             raw_output = f"{stdout_text}\n{stderr_text}".strip()
             filtered = filter_output_logic(raw_output, output_type="auto", exit_code=-1)
-            return f"Command timed out after {timeout}s\n" + filtered
+            return (
+                f"Command timed out after {timeout}s. If this is a daemon, long-running server, streamer, or background process, pass background=True.\n"
+                + filtered
+            )
         except Exception as e:
             return f"Error executing command: {str(e)}"
 

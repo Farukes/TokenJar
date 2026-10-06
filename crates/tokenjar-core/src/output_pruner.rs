@@ -5,6 +5,9 @@
 
 use std::process::{Command, Stdio};
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 use crate::filters::ansi::strip_ansi;
 use crate::filters::build_tools::{detect_and_filter_build, filter_npm_yarn};
 use crate::filters::git::filter_git_output;
@@ -132,12 +135,20 @@ pub fn run_command_smart(
         #[cfg(target_os = "windows")]
         let mut cmd = Command::new("cmd");
         #[cfg(target_os = "windows")]
-        cmd.args(["/C", command_str]);
+        {
+            cmd.raw_arg(format!("/C {command_str}"));
+            cmd.env("PYTHONIOENCODING", "utf-8")
+                .env("PYTHONUTF8", "1");
+        }
 
         #[cfg(not(target_os = "windows"))]
         let mut cmd = Command::new("sh");
         #[cfg(not(target_os = "windows"))]
-        cmd.args(["-c", command_str]);
+        {
+            cmd.args(["-c", command_str]);
+            cmd.env("PYTHONIOENCODING", "utf-8")
+                .env("PYTHONUTF8", "1");
+        }
 
         cmd.current_dir(cwd)
             .stdout(Stdio::null())
@@ -154,12 +165,20 @@ pub fn run_command_smart(
         #[cfg(target_os = "windows")]
         let mut cmd = Command::new("cmd");
         #[cfg(target_os = "windows")]
-        cmd.args(["/C", command_str]);
+        {
+            cmd.raw_arg(format!("/C {command_str}"));
+            cmd.env("PYTHONIOENCODING", "utf-8")
+                .env("PYTHONUTF8", "1");
+        }
 
         #[cfg(not(target_os = "windows"))]
         let mut cmd = Command::new("sh");
         #[cfg(not(target_os = "windows"))]
-        cmd.args(["-c", command_str]);
+        {
+            cmd.args(["-c", command_str]);
+            cmd.env("PYTHONIOENCODING", "utf-8")
+                .env("PYTHONUTF8", "1");
+        }
 
         cmd.current_dir(cwd)
             .stdout(Stdio::piped())
@@ -207,7 +226,7 @@ pub fn run_command_smart(
                         let _ = child.wait();
                         let _ = stdout_thread.join();
                         let _ = stderr_thread.join();
-                        return format!("Error: Command timed out after {timeout_secs} seconds.");
+                        return format!("Error: Command timed out after {timeout_secs} seconds. If this is a daemon, long-running server, streamer, or background process, pass background=true.");
                     }
                     std::thread::sleep(std::time::Duration::from_millis(20));
                 }
@@ -268,5 +287,14 @@ test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
         let result = run_command_smart(cmd, ".", 1, false, &tracker);
         assert!(result.contains("timed out"));
+    }
+
+    #[test]
+    fn test_run_command_smart_quotes_and_utf8() {
+        let temp_telemetry = tempfile::NamedTempFile::new().unwrap();
+        let tracker = TelemetryTracker::with_path(temp_telemetry.path().to_path_buf());
+        let cmd = r#"python -c "print('🚀 test successful')""#;
+        let result = run_command_smart(cmd, ".", 10, false, &tracker);
+        assert!(result.contains("🚀 test successful"), "Result was: {result}");
     }
 }

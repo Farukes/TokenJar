@@ -266,6 +266,10 @@ pub fn get_directory_tree(root_path: &Path, max_depth: usize) -> String {
         config: &TokenJarConfig,
         lines: &mut Vec<String>,
     ) {
+        if lines.len() >= 60 {
+            return;
+        }
+
         if depth > max_depth {
             lines.push(format!("{prefix}..."));
             return;
@@ -286,6 +290,13 @@ pub fn get_directory_tree(root_path: &Path, max_depth: usize) -> String {
         });
 
         // Filter ignored
+        const ALWAYS_SKIP_DIRS: &[&str] = &[
+            "target", "node_modules", "__pycache__", ".git", "data", "logs",
+            "dist", "build", ".venv", "venv", "env", ".cache", ".pytest_cache",
+            ".ruff_cache", ".mypy_cache", ".idea", ".vscode", ".vs", "coverage",
+            "htmlcov", ".tox",
+        ];
+
         let filtered: Vec<_> = entries
             .into_iter()
             .filter(|e| {
@@ -293,20 +304,26 @@ pub fn get_directory_tree(root_path: &Path, max_depth: usize) -> String {
                 if name.starts_with('.') && name != ".gitignore" && name != ".env.example" {
                     return false;
                 }
-                if name == "target"
-                    || name == "node_modules"
-                    || name == "__pycache__"
-                    || name == ".git"
-                {
+                if ALWAYS_SKIP_DIRS.contains(&name.as_str()) {
                     return false;
                 }
                 !config.is_ignored(&e.path())
             })
             .collect();
 
-        let count = filtered.len();
-        for (i, entry) in filtered.into_iter().enumerate() {
-            let is_last = i == count - 1;
+        let total_count = filtered.len();
+        let (display_items, truncated_count) = if total_count > 15 {
+            (&filtered[..10], total_count - 10)
+        } else {
+            (&filtered[..], 0)
+        };
+
+        let count = display_items.len();
+        for (i, entry) in display_items.iter().enumerate() {
+            if lines.len() >= 60 {
+                break;
+            }
+            let is_last = (i == count - 1) && (truncated_count == 0);
             let connector = if is_last { "└── " } else { "├── " };
             let file_name = entry.file_name().to_string_lossy().to_string();
             let is_dir = entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false);
@@ -326,6 +343,10 @@ pub fn get_directory_tree(root_path: &Path, max_depth: usize) -> String {
                 lines.push(format!("{prefix}{connector}{file_name}"));
             }
         }
+
+        if truncated_count > 0 && lines.len() < 60 {
+            lines.push(format!("{prefix}└── ... (+{truncated_count} more items)"));
+        }
     }
 
     let root_name = root
@@ -334,6 +355,10 @@ pub fn get_directory_tree(root_path: &Path, max_depth: usize) -> String {
         .unwrap_or_else(|| "root".to_string());
     lines.push(format!("{root_name}/"));
     walk_dir(&root, 1, max_depth, "", &config, &mut lines);
+
+    if lines.len() >= 60 {
+        lines.push("\n... [TokenJar Guard: Directory tree capped at 60 entries. Use get_directory_tree_tool with subpath or smaller max_depth] ...".to_string());
+    }
 
     lines.join("\n")
 }

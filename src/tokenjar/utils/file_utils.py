@@ -159,6 +159,8 @@ SKIP_DIRS: set[str] = {
     ".vscode",
     ".vs",
     ".terraform",
+    "data",
+    "logs",
 }
 
 

@@ -8,7 +8,8 @@ from tokenjar.utils.token_counter import format_savings
 _cache = SessionCache()
 _config = load_config()
 
-MAX_OUTPUT_LINES = 80
+MAX_OUTPUT_LINES = 40
+MAX_OUTPUT_BYTES = 2500
 
 
 def read_file_smart(
@@ -113,9 +114,19 @@ def read_file_smart(
                         pass
                     return f"{cached.content}\n\nToken savings: {savings}"
 
-                if len(full_slice) > MAX_OUTPUT_LINES and not force_full:
-                    p_end = start + MAX_OUTPUT_LINES - 1
-                    display = full_slice[:MAX_OUTPUT_LINES]
+                take_count = 0
+                byte_accum = 0
+                for line_item in full_slice:
+                    if take_count >= MAX_OUTPUT_LINES or (take_count > 0 and byte_accum + len(line_item) > MAX_OUTPUT_BYTES):
+                        break
+                    byte_accum += len(line_item) + 1
+                    take_count += 1
+                if take_count == 0:
+                    take_count = min(1, len(full_slice))
+
+                if take_count < len(full_slice) and not force_full:
+                    p_end = start + take_count - 1
+                    display = full_slice[:take_count]
                     notice = (
                         f"\n\n[TOKENJAR PAGINATION] Showing lines {start}-{p_end} of {total}. (Remaining lines truncated to protect context window)\n"
                         f"👉 To read next slice, call read_file_smart with start_line={p_end + 1}, end_line={min(end, p_end + MAX_OUTPUT_LINES)}."
@@ -212,9 +223,19 @@ def read_file_smart(
                 pass
             return f"{cached.content}\n\nToken savings: {savings}"
 
-        if len(full_slice) > MAX_OUTPUT_LINES and not force_full:
-            p_end = start + MAX_OUTPUT_LINES - 1
-            display = full_slice[:MAX_OUTPUT_LINES]
+        take_count = 0
+        byte_accum = 0
+        for line_item in full_slice:
+            if take_count >= MAX_OUTPUT_LINES or (take_count > 0 and byte_accum + len(line_item) > MAX_OUTPUT_BYTES):
+                break
+            byte_accum += len(line_item) + 1
+            take_count += 1
+        if take_count == 0:
+            take_count = min(1, len(full_slice))
+
+        if take_count < len(full_slice) and not force_full:
+            p_end = start + take_count - 1
+            display = full_slice[:take_count]
             notice = (
                 f"\n\n[TOKENJAR PAGINATION] Showing lines {start}-{p_end} of {total}. (Remaining lines truncated to protect context window)\n"
                 f"👉 To read next slice, call read_file_smart with start_line={p_end + 1}, end_line={min(end, p_end + MAX_OUTPUT_LINES)}."
@@ -262,8 +283,16 @@ def read_file_smart(
                 "Gemfile.lock",
             )
         )
-        if total > MAX_OUTPUT_LINES and not force_full and not is_lock:
-            p_end = MAX_OUTPUT_LINES
+        take_count = 0
+        byte_accum = 0
+        for line_item in lines:
+            if take_count >= MAX_OUTPUT_LINES or (take_count > 0 and byte_accum + len(line_item) > MAX_OUTPUT_BYTES):
+                break
+            byte_accum += len(line_item) + 1
+            take_count += 1
+
+        if take_count < total and not force_full and not is_lock:
+            p_end = take_count
             display = [f"{i}: {line}" for i, line in enumerate(lines[:p_end], start=1)]
             header = f"[TOKENJAR] Showing lines 1-{p_end} of {total} in '{file_path}':\n"
             notice = (
