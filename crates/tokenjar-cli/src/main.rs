@@ -515,8 +515,10 @@ async fn main() {
             let cmd_str = command
                 .iter()
                 .map(|arg| {
-                    if arg.contains(' ') && !arg.starts_with('"') && !arg.starts_with('\'') {
-                        format!("\"{arg}\"")
+                    let needs_quotes = arg.is_empty()
+                        || arg.contains(|c: char| c.is_whitespace() || "\"\'();&|<>^".contains(c));
+                    if needs_quotes && !arg.starts_with('"') && !arg.starts_with('\'') {
+                        format!("\"{}\"", arg.replace('"', "\\\""))
                     } else {
                         arg.clone()
                     }

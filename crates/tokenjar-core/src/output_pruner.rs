@@ -136,7 +136,7 @@ pub fn run_command_smart(
         let mut cmd = Command::new("cmd");
         #[cfg(target_os = "windows")]
         {
-            cmd.raw_arg(format!("/C {command_str}"));
+            cmd.raw_arg(format!("/s /c \"{}\"", command_str));
             cmd.env("PYTHONIOENCODING", "utf-8")
                 .env("PYTHONUTF8", "1");
         }
@@ -166,7 +166,7 @@ pub fn run_command_smart(
         let mut cmd = Command::new("cmd");
         #[cfg(target_os = "windows")]
         {
-            cmd.raw_arg(format!("/C {command_str}"));
+            cmd.raw_arg(format!("/s /c \"{}\"", command_str));
             cmd.env("PYTHONIOENCODING", "utf-8")
                 .env("PYTHONUTF8", "1");
         }
@@ -300,5 +300,12 @@ test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
         let result = run_command_smart(cmd, ".", 10, false, &tracker);
         assert!(result.contains("🚀 test successful"), "Result was: {result}");
+
+        #[cfg(target_os = "windows")]
+        {
+            let quoted_cmd = r#""git" --version"#;
+            let quoted_res = run_command_smart(quoted_cmd, ".", 10, false, &tracker);
+            assert!(quoted_res.contains("git version"), "Result was: {quoted_res}");
+        }
     }
 }

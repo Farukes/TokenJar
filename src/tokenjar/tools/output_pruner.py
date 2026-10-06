@@ -130,12 +130,19 @@ def register_output_pruner_tools(mcp):
         sub_env["PYTHONIOENCODING"] = "utf-8"
         sub_env["PYTHONUTF8"] = "1"
 
+        if os.name == "nt":
+            exec_cmd = f'cmd.exe /s /c "{command}"'
+            use_shell = False
+        else:
+            exec_cmd = command
+            use_shell = True
+
         if background:
             try:
                 proc = subprocess.Popen(
-                    command,
+                    exec_cmd,
                     cwd=cwd,
-                    shell=True,
+                    shell=use_shell,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     env=sub_env,
@@ -146,9 +153,9 @@ def register_output_pruner_tools(mcp):
 
         try:
             result = subprocess.run(
-                command,
+                exec_cmd,
                 cwd=cwd,
-                shell=True,
+                shell=use_shell,
                 capture_output=True,
                 timeout=timeout,
                 env=sub_env,

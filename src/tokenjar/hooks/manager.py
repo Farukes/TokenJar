@@ -44,7 +44,11 @@ def execute_filtered_command(command: str | list[str], cwd: str = ".") -> int:
     Respects RAW=1 or --raw bypass to return raw output without modification.
     """
     if isinstance(command, list):
-        cmd_str = " ".join(command)
+        if os.name == "nt":
+            cmd_str = subprocess.list2cmdline(command)
+        else:
+            import shlex
+            cmd_str = shlex.join(command)
     else:
         cmd_str = command
 
@@ -55,11 +59,18 @@ def execute_filtered_command(command: str | list[str], cwd: str = ".") -> int:
     else:
         bypass = is_bypass_active()
 
+    if os.name == "nt":
+        exec_cmd = f'cmd.exe /s /c "{cmd_str}"'
+        use_shell = False
+    else:
+        exec_cmd = cmd_str
+        use_shell = True
+
     try:
         res = subprocess.run(
-            cmd_str,
+            exec_cmd,
             cwd=cwd,
-            shell=True,
+            shell=use_shell,
             capture_output=True,
         )
         stdout_str = (res.stdout or b"").decode("utf-8", errors="replace")
