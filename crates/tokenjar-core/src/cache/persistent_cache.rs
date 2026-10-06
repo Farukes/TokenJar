@@ -10,6 +10,13 @@ pub struct PersistentCache {
     db_path: PathBuf,
 }
 
+/// Normalizes project roots across platforms (strips Windows \\?\ prefix and normalizes backslashes).
+#[inline]
+pub fn normalize_project_root(root: &str) -> String {
+    let stripped = root.strip_prefix(r"\\?\").unwrap_or(root);
+    stripped.replace('\\', "/")
+}
+
 impl PersistentCache {
     pub fn new() -> Result<Self> {
         let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
@@ -81,6 +88,7 @@ impl PersistentCache {
         exact: bool,
         max_results: usize,
     ) -> Result<Vec<IndexedSymbol>> {
+        let norm_root = normalize_project_root(project_root);
         let conn = self.connect()?;
         let mut symbols = Vec::new();
 
@@ -91,7 +99,7 @@ impl PersistentCache {
                  WHERE project_root = ? AND name = ?
                  LIMIT ?",
             )?;
-            let rows = stmt.query_map(params![project_root, query, max_results], |row| {
+            let rows = stmt.query_map(params![norm_root, query, max_results], |row| {
                 Ok(IndexedSymbol {
                     name: row.get(0)?,
                     kind: row.get(1)?,
@@ -116,7 +124,7 @@ impl PersistentCache {
                  WHERE project_root = ? AND name LIKE ? ESCAPE '\\'
                  LIMIT ?",
             )?;
-            let rows = stmt.query_map(params![project_root, pattern, max_results], |row| {
+            let rows = stmt.query_map(params![norm_root, pattern, max_results], |row| {
                 Ok(IndexedSymbol {
                     name: row.get(0)?,
                     kind: row.get(1)?,
@@ -135,13 +143,14 @@ impl PersistentCache {
     }
 
     pub fn get_all_symbols(&self, project_root: &str) -> Result<Vec<IndexedSymbol>> {
+        let norm_root = normalize_project_root(project_root);
         let conn = self.connect()?;
         let mut stmt = conn.prepare(
             "SELECT name, kind, file_path, line, signature, file_hash
              FROM symbol_index
              WHERE project_root = ?",
         )?;
-        let rows = stmt.query_map(params![project_root], |row| {
+        let rows = stmt.query_map(params![norm_root], |row| {
             Ok(IndexedSymbol {
                 name: row.get(0)?,
                 kind: row.get(1)?,
@@ -166,13 +175,14 @@ impl PersistentCache {
         mtime: f64,
         symbols: &[IndexedSymbol],
     ) -> Result<()> {
+        let norm_root = normalize_project_root(project_root);
         let mut conn = self.connect()?;
         let tx = conn.transaction()?;
 
         // Delete existing symbols for this file
         tx.execute(
             "DELETE FROM symbol_index WHERE project_root = ? AND file_path = ?",
-            params![project_root, file_path],
+            params![norm_root, file_path],
         )?;
 
         // Insert fresh symbols
@@ -183,7 +193,7 @@ impl PersistentCache {
             )?;
             for s in symbols {
                 stmt.execute(params![
-                    project_root,
+                    norm_root,
                     file_path,
                     s.name,
                     s.kind,
@@ -204,11 +214,12 @@ impl PersistentCache {
         project_root: &str,
         file_path: &str,
     ) -> Result<Option<(String, f64)>> {
+        let norm_root = normalize_project_root(project_root);
         let conn = self.connect()?;
         let mut stmt = conn.prepare(
             "SELECT file_hash, mtime FROM symbol_index WHERE project_root = ? AND file_path = ? LIMIT 1",
         )?;
-        let mut rows = stmt.query(params![project_root, file_path])?;
+        let mut rows = stmt.query(params![norm_root, file_path])?;
         if let Some(row) = rows.next()? {
             let hash: String = row.get(0)?;
             let mtime: f64 = row.get(1)?;
@@ -222,11 +233,12 @@ impl PersistentCache {
         &self,
         project_root: &str,
     ) -> Result<std::collections::HashMap<String, (String, f64)>> {
+        let norm_root = normalize_project_root(project_root);
         let conn = self.connect()?;
         let mut stmt = conn.prepare(
             "SELECT file_path, file_hash, mtime FROM symbol_index WHERE project_root = ? GROUP BY file_path",
         )?;
-        let rows = stmt.query_map(params![project_root], |row| {
+        let rows = stmt.query_map(params![norm_root], |row| {
             let path: String = row.get(0)?;
             let hash: String = row.get(1)?;
             let mtime: f64 = row.get(2)?;
@@ -311,5 +323,15 @@ mod tests {
             .search_symbols("/test_root", "tokens", false, 10)
             .unwrap();
         assert_eq!(fuzzy.len(), 1);
+
+        // Path normalization test: set with Windows UNC and backslashes, query with forward slashes
+        cache
+            .set_file_symbols(r"\\?\C:\Projects\MyApp", "src/lib.rs", "hash456", 2000.0, &syms)
+            .unwrap();
+        let cross = cache
+            .search_symbols("C:/Projects/MyApp", "calculate_tokens", true, 10)
+            .unwrap();
+        assert_eq!(cross.len(), 1);
+        assert_eq!(cross[0].name, "calculate_tokens");
     }
 }
