@@ -9,12 +9,12 @@
 <h1 align="center">🍯 TokenJar</h1>
 <p align="center"><b>Token'ları kumbarana geri koy. Yapay zekâ kodlama asistanları için sıfır maliyetli token kumbarası ve akıllı optimizasyon motoru.</b></p>
 
-[![Release: v1.1.0](https://img.shields.io/badge/S%C3%BCr%C3%BCm-v1.1.0%20GA-green.svg)](https://github.com/Farukes/TokenJar/releases/latest)
+[![Release: v1.1.1](https://img.shields.io/badge/S%C3%BCr%C3%BCm-v1.1.1-green.svg)](https://github.com/Farukes/TokenJar/releases/latest)
 [![CI](https://github.com/Farukes/TokenJar/actions/workflows/ci.yml/badge.svg)](https://github.com/Farukes/TokenJar/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/downloads/)
-[![Kurumsal Yerel Motor: Rust](https://img.shields.io/badge/Kurumsal%20Yerel%20Motor-Rust%20v1.1.0-orange.svg)](#kurumsal-motor)
-[![Crates.io: v1.1.0](https://img.shields.io/badge/crates.io-v1.1.0-orange.svg?logo=rust&logoColor=white)](https://crates.io/crates/tokenjar)
-[![PyPI: v1.1.0](https://img.shields.io/badge/PyPI-v1.1.0-blue.svg?logo=pypi&logoColor=white)](https://pypi.org/project/tokenjar/)
+[![Kurumsal Yerel Motor: Rust](https://img.shields.io/badge/Kurumsal%20Yerel%20Motor-Rust%20v1.1.1-orange.svg)](#kurumsal-motor)
+[![Crates.io: v1.1.1](https://img.shields.io/badge/crates.io-v1.1.1-orange.svg?logo=rust&logoColor=white)](https://crates.io/crates/tokenjar)
+[![PyPI: v1.1.1](https://img.shields.io/badge/PyPI-v1.1.1-blue.svg?logo=pypi&logoColor=white)](https://pypi.org/project/tokenjar/)
 [![Token Tasarrufu](https://img.shields.io/badge/Token%20Tasarrufu-%2590%20ile%20%2599-brightgreen.svg)](#performans-testleri)
 [![Lisans: BSL 1.1](https://img.shields.io/badge/Lisans-BSL%201.1-blue.svg)](LICENSE)
 [![Zero Telemetry](https://img.shields.io/badge/telemetri-0%25%20--%20%25100%20yerel-success.svg)](#gizlilik-garantisi)

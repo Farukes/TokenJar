@@ -9,12 +9,12 @@
 <h1 align="center">🍯 TokenJar</h1>
 <p align="center"><b>Put tokens back in your jar. Save 70-95% tokens for AI coding assistants without losing functionality.</b></p>
 
-[![Release: v1.1.0](https://img.shields.io/badge/Release-v1.1.0%20GA-green.svg)](https://github.com/Farukes/TokenJar/releases/latest)
+[![Release: v1.1.1](https://img.shields.io/badge/Release-v1.1.1-green.svg)](https://github.com/Farukes/TokenJar/releases/latest)
 [![CI](https://github.com/Farukes/TokenJar/actions/workflows/ci.yml/badge.svg)](https://github.com/Farukes/TokenJar/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/downloads/)
-[![Enterprise Native: Rust](https://img.shields.io/badge/Enterprise%20Native-Rust%20v1.1.0-orange.svg)](#enterprise-engine)
-[![Crates.io: v1.1.0](https://img.shields.io/badge/crates.io-v1.1.0-orange.svg?logo=rust&logoColor=white)](https://crates.io/crates/tokenjar)
-[![PyPI: v1.1.0](https://img.shields.io/badge/PyPI-v1.1.0-blue.svg?logo=pypi&logoColor=white)](https://pypi.org/project/tokenjar/)
+[![Enterprise Native: Rust](https://img.shields.io/badge/Enterprise%20Native-Rust%20v1.1.1-orange.svg)](#enterprise-engine)
+[![Crates.io: v1.1.1](https://img.shields.io/badge/crates.io-v1.1.1-orange.svg?logo=rust&logoColor=white)](https://crates.io/crates/tokenjar)
+[![PyPI: v1.1.1](https://img.shields.io/badge/PyPI-v1.1.1-blue.svg?logo=pypi&logoColor=white)](https://pypi.org/project/tokenjar/)
 [![Token Reduction](https://img.shields.io/badge/Token%20Savings-90%25%20to%2099%25-brightgreen.svg)](#benchmarks)
 [![License: BSL 1.1](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](LICENSE)
 [![Zero Telemetry](https://img.shields.io/badge/telemetry-0%25%20--%20100%25%20local-success.svg)](#privacy-guarantee)

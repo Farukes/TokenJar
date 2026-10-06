@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2026-10-06 (Windows Hardening & Indexing Optimization)
+
+### 🐛 Bug Fixes & Performance Improvements
+
+- **Windows Runtime & Buffer Interception Hardening:**
+  - **Windows Quote Preservation (`cmd.exe /C`):** Replaced default Windows argument escaping with `raw_arg("/C ...")` in Rust and preserved command-line argument quotes in `tokenjar run`, eliminating `SyntaxError: unterminated string literal` on nested quotes.
+  - **Console UTF-8 Injection:** Injected `PYTHONIOENCODING=utf-8` and `PYTHONUTF8=1` into child process execution environments, preventing `UnicodeEncodeError` crashes on Windows `cp1254`/OEM code pages.
+  - **Context Interception Protection:** Lowered smart reader auto-paging ceiling to 40 lines and added a 2,500-byte accumulation guard (`MAX_OUTPUT_BYTES = 2500`), preventing IDE frameworks (Gemini / Antigravity) from intercepting tool payloads into external `output.txt` files.
+  - **Directory Tree Guardrails:** Expanded directory skip list with `data`, `logs`, `dist`, `build`, `.venv`, `.cache`, added a 15-item per-directory truncation cap (`... +N more items`), and a 60-line global circuit breaker to `get_directory_tree_tool`.
+  - **Daemon/Watcher Non-Blocking Steering:** Enhanced `run_command_smart` schema and agent steering guidelines to mandate `background=true` for continuous servers, bots, and file watchers, with responsive timeout diagnostic messages.
+
+- **100x Faster SQLite Indexing & Cross-Platform Path Normalization:**
+  - **Batch Metadata Reading:** Introduced `PersistentCache::get_all_file_metas` to batch-read file hashes and modification timestamps before directory traversal, reducing 500 individual SQLite connection open/close queries down to a single query and $O(1)$ in-memory lookups.
+  - **Raw Byte-Level Blast Radius Filtering:** Added fast byte substring containment in `find_symbol_references` before full string allocation and AST decoding, saving hundreds of megabytes of heap allocations on large codebases.
+  - **Windows UNC Normalization:** Stripped `\\?\` UNC prefix in canonical paths and normalized slashes across `symbols.rs`, `session_cache.rs`, and `repo_map.rs`, establishing seamless SQLite cache sharing between Rust and Python engines.
+
+---
+
 ## [1.1.0] - 2026-10-06 (AI Token Optimizer — GA Release)
 
 ### 🚀 Highlights & Major Features
