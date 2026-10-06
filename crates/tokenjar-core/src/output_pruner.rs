@@ -293,7 +293,11 @@ test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
     fn test_run_command_smart_quotes_and_utf8() {
         let temp_telemetry = tempfile::NamedTempFile::new().unwrap();
         let tracker = TelemetryTracker::with_path(temp_telemetry.path().to_path_buf());
-        let cmd = r#"python -c "print('🚀 test successful')""#;
+        #[cfg(target_os = "windows")]
+        let cmd = r#"powershell -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Write-Output '🚀 test successful'""#;
+        #[cfg(not(target_os = "windows"))]
+        let cmd = r#"echo '🚀 test successful'"#;
+
         let result = run_command_smart(cmd, ".", 10, false, &tracker);
         assert!(result.contains("🚀 test successful"), "Result was: {result}");
     }
