@@ -742,8 +742,11 @@ fn handle_update(force: bool) {
 
                     #[cfg(target_os = "windows")]
                     {
-                        let old_exe = current_exe.with_extension("exe.old");
-                        let _ = std::fs::remove_file(&old_exe);
+                        let timestamp = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_millis();
+                        let old_exe = current_exe.with_file_name(format!("tokenjar-{timestamp}.old"));
                         if let Err(e) = std::fs::rename(&current_exe, &old_exe) {
                             eprintln!("❌ Failed to rename current executable: {e}");
                             std::process::exit(1);
