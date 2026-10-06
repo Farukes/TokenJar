@@ -312,27 +312,27 @@ pub fn extract_references_from_code(
     unique_refs
 }
 
+pub fn clean_canonical_root(root_path: &Path) -> (std::path::PathBuf, String) {
+    let canonical = root_path
+        .canonicalize()
+        .unwrap_or_else(|_| root_path.to_path_buf());
+    let raw_str = canonical.to_string_lossy();
+    let stripped = raw_str.strip_prefix(r"\\?\").unwrap_or(&raw_str);
+    let normalized = stripped.replace('\\', "/");
+    (canonical, normalized)
+}
+
 fn is_skip_dir(entry: &walkdir::DirEntry) -> bool {
     if entry.depth() == 0 || !entry.file_type().is_dir() {
         return false;
     }
     let name = entry.file_name().to_string_lossy();
-    name.starts_with('.')
-        || name == "target"
-        || name == "node_modules"
-        || name == "__pycache__"
-        || name == "venv"
-        || name == ".venv"
-        || name == "dist"
-        || name == "build"
+    name.starts_with('.') || crate::repo_map::ALWAYS_SKIP_DIRS.contains(&name.as_ref())
 }
 
 /// Recursively scans and indexes the repository incrementally into SQLite.
 pub fn index_repository(root_path: &Path) -> Vec<IndexedSymbol> {
-    let root = root_path
-        .canonicalize()
-        .unwrap_or_else(|_| root_path.to_path_buf());
-    let root_str = root.to_string_lossy().to_string();
+    let (root, root_str) = clean_canonical_root(root_path);
 
     {
         if let Ok(mut last_map) = LAST_INDEX_TIME.lock() {
@@ -351,6 +351,7 @@ pub fn index_repository(root_path: &Path) -> Vec<IndexedSymbol> {
         Err(_) => return Vec::new(),
     };
 
+    let cached_files = cache.get_all_file_metas(&root_str).unwrap_or_default();
     let mut all_symbols = Vec::new();
     let mut file_count = 0;
 
@@ -393,7 +394,7 @@ pub fn index_repository(root_path: &Path) -> Vec<IndexedSymbol> {
             .unwrap_or(0.0);
 
         // Incremental cache check: skip file if mtime is unchanged
-        if let Ok(Some((_, cached_mtime))) = cache.get_file_meta(&root_str, &rel_path) {
+        if let Some((_, cached_mtime)) = cached_files.get(&rel_path) {
             if (cached_mtime - mtime).abs() < 0.001 {
                 continue;
             }
@@ -536,10 +537,7 @@ pub fn find_symbol_global(
         return "Error: Empty query provided.".to_string();
     }
 
-    let root = root_path
-        .canonicalize()
-        .unwrap_or_else(|_| root_path.to_path_buf());
-    let root_str = root.to_string_lossy().to_string();
+    let (root, root_str) = clean_canonical_root(root_path);
 
     // Ensure index is populated
     let _ = index_repository(&root);
@@ -642,10 +640,7 @@ pub fn find_symbol_references(symbol_name: &str, root_path: &Path, max_results: 
         return "Error: Empty symbol_name provided.".to_string();
     }
 
-    let root = root_path
-        .canonicalize()
-        .unwrap_or_else(|_| root_path.to_path_buf());
-    let root_str = root.to_string_lossy().to_string();
+    let (root, root_str) = clean_canonical_root(root_path);
     let _ = index_repository(&root);
 
     let cache = match PersistentCache::new() {
@@ -694,18 +689,17 @@ pub fn find_symbol_references(symbol_name: &str, root_path: &Path, max_results: 
             }
         }
 
-        let content = match std::fs::read(p) {
-            Ok(bytes) => match String::from_utf8(bytes) {
-                Ok(s) => s,
-                Err(e) => String::from_utf8_lossy(e.as_bytes()).into_owned(),
-            },
+        let bytes = match std::fs::read(p) {
+            Ok(b) => b,
             Err(_) => continue,
         };
 
-        if !content.contains(sym) {
+        let needle = sym.as_bytes();
+        if needle.is_empty() || !bytes.windows(needle.len()).any(|w| w == needle) {
             continue;
         }
 
+        let content = String::from_utf8_lossy(&bytes);
         let refs = extract_references_from_code(&content, lang, &rel_path, sym, &def_locations);
         all_refs.extend(refs);
     }

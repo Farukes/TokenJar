@@ -218,6 +218,28 @@ impl PersistentCache {
         }
     }
 
+    pub fn get_all_file_metas(
+        &self,
+        project_root: &str,
+    ) -> Result<std::collections::HashMap<String, (String, f64)>> {
+        let conn = self.connect()?;
+        let mut stmt = conn.prepare(
+            "SELECT file_path, file_hash, mtime FROM symbol_index WHERE project_root = ? GROUP BY file_path",
+        )?;
+        let rows = stmt.query_map(params![project_root], |row| {
+            let path: String = row.get(0)?;
+            let hash: String = row.get(1)?;
+            let mtime: f64 = row.get(2)?;
+            Ok((path, (hash, mtime)))
+        })?;
+        let mut map = std::collections::HashMap::new();
+        for r in rows {
+            let (p, data) = r?;
+            map.insert(p, data);
+        }
+        Ok(map)
+    }
+
     pub fn prune(&self, max_entries: usize) -> Result<usize> {
         let conn = self.connect()?;
         let count: usize = conn

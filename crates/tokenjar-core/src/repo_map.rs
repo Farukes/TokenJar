@@ -14,6 +14,13 @@ use crate::parser::{detect_language, parse_code, SupportedLanguage};
 use crate::symbols::extract_symbols_from_code;
 use crate::token_counter::estimate_tokens;
 
+pub const ALWAYS_SKIP_DIRS: &[&str] = &[
+    "target", "node_modules", "__pycache__", ".git", "data", "logs",
+    "dist", "build", ".venv", "venv", "env", ".cache", ".pytest_cache",
+    ".ruff_cache", ".mypy_cache", ".idea", ".vscode", ".vs", "coverage",
+    "htmlcov", ".tox",
+];
+
 #[derive(Debug, Clone)]
 pub struct FileInfo {
     pub rel_path: String,
@@ -290,13 +297,6 @@ pub fn get_directory_tree(root_path: &Path, max_depth: usize) -> String {
         });
 
         // Filter ignored
-        const ALWAYS_SKIP_DIRS: &[&str] = &[
-            "target", "node_modules", "__pycache__", ".git", "data", "logs",
-            "dist", "build", ".venv", "venv", "env", ".cache", ".pytest_cache",
-            ".ruff_cache", ".mypy_cache", ".idea", ".vscode", ".vs", "coverage",
-            "htmlcov", ".tox",
-        ];
-
         let filtered: Vec<_> = entries
             .into_iter()
             .filter(|e| {

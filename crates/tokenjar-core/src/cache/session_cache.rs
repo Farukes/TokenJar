@@ -58,7 +58,9 @@ fn normalize_path_key(path: &str) -> String {
     let clean = base_path.replace('\\', "/");
     let trimmed = clean.strip_prefix("./").unwrap_or(&clean);
     let normalized_base = if let Ok(canon) = std::path::Path::new(base_path).canonicalize() {
-        canon.to_string_lossy().replace('\\', "/")
+        let raw = canon.to_string_lossy();
+        let stripped = raw.strip_prefix(r"\\?\").unwrap_or(&raw);
+        stripped.replace('\\', "/")
     } else {
         trimmed.to_string()
     };
