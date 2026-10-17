@@ -27,21 +27,40 @@ pub fn get_supported_ide_configs() -> Vec<(&'static str, PathBuf)> {
     {
         let mut claude_cfg = None;
         if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
-            let packages_dir = PathBuf::from(localappdata).join("Packages");
-            if packages_dir.is_dir() {
-                if let Ok(entries) = std::fs::read_dir(&packages_dir) {
+            let local_path = PathBuf::from(&localappdata);
+
+            // 1a. Check %LOCALAPPDATA%\Claude-Data\*\claude_desktop_config.json
+            let claude_data_dir = local_path.join("Claude-Data");
+            if claude_data_dir.is_dir() {
+                if let Ok(entries) = std::fs::read_dir(&claude_data_dir) {
                     for entry in entries.flatten() {
-                        let name = entry.file_name().to_string_lossy().to_string();
-                        if name.starts_with("Claude_") {
-                            let msix_cfg = entry
-                                .path()
-                                .join("LocalCache")
-                                .join("Roaming")
-                                .join("Claude")
-                                .join("claude_desktop_config.json");
-                            if msix_cfg.exists() {
-                                claude_cfg = Some(msix_cfg);
-                                break;
+                        let candidate = entry.path().join("claude_desktop_config.json");
+                        if candidate.exists() {
+                            claude_cfg = Some(candidate);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 1b. Check %LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\Claude\claude_desktop_config.json
+            if claude_cfg.is_none() {
+                let packages_dir = local_path.join("Packages");
+                if packages_dir.is_dir() {
+                    if let Ok(entries) = std::fs::read_dir(&packages_dir) {
+                        for entry in entries.flatten() {
+                            let name = entry.file_name().to_string_lossy().to_string();
+                            if name.starts_with("Claude_") {
+                                let msix_cfg = entry
+                                    .path()
+                                    .join("LocalCache")
+                                    .join("Roaming")
+                                    .join("Claude")
+                                    .join("claude_desktop_config.json");
+                                if msix_cfg.exists() {
+                                    claude_cfg = Some(msix_cfg);
+                                    break;
+                                }
                             }
                         }
                     }

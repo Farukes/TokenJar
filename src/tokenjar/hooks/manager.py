@@ -491,14 +491,24 @@ npm() {{ if [ "$1" = "test" ]; then tokenjar run "npm $@"; else command npm "$@"
             claude_cfg = None
             localappdata = os.environ.get("LOCALAPPDATA")
             if localappdata:
-                packages_dir = Path(localappdata) / "Packages"
-                if packages_dir.is_dir():
-                    for entry in packages_dir.iterdir():
-                        if entry.is_dir() and entry.name.startswith("Claude_"):
-                            msix_cfg = entry / "LocalCache" / "Roaming" / "Claude" / "claude_desktop_config.json"
-                            if msix_cfg.exists():
-                                claude_cfg = msix_cfg
-                                break
+                local_path = Path(localappdata)
+                claude_data = local_path / "Claude-Data"
+                if claude_data.is_dir():
+                    for entry in claude_data.iterdir():
+                        candidate = entry / "claude_desktop_config.json"
+                        if candidate.exists():
+                            claude_cfg = candidate
+                            break
+
+                if not claude_cfg:
+                    packages_dir = local_path / "Packages"
+                    if packages_dir.is_dir():
+                        for entry in packages_dir.iterdir():
+                            if entry.is_dir() and entry.name.startswith("Claude_"):
+                                msix_cfg = entry / "LocalCache" / "Roaming" / "Claude" / "claude_desktop_config.json"
+                                if msix_cfg.exists():
+                                    claude_cfg = msix_cfg
+                                    break
             if claude_cfg:
                 configs["Claude Desktop"] = claude_cfg
             else:
