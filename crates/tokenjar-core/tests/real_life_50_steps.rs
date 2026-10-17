@@ -277,7 +277,7 @@ fn test_real_life_50_steps_rust() {
     );
 
     // Steps 18-20: Caching across other key repo files
-    let key_files = vec![
+    let key_files = [
         repo_root.join("crates/tokenjar-core/src/lib.rs"),
         repo_root.join("Cargo.toml"),
         repo_root.join("tokenjar.toml"),
@@ -470,7 +470,7 @@ fn test_real_life_50_steps_rust() {
         .to_string_lossy()
         .to_string();
     let t0 = Instant::now();
-    for (_s_idx, sym_q) in query_symbols.iter().enumerate() {
+    for sym_q in query_symbols.iter() {
         let res = p_cache
             .search_symbols(&root_str, sym_q, false, 5)
             .unwrap_or_default();

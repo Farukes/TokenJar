@@ -443,6 +443,16 @@ npm() {{ if [ "$1" = "test" ]; then tokenjar run "npm $@"; else command npm "$@"
 
         if name == "Claude Desktop":
             if os.name == "nt":
+                localappdata = os.environ.get("LOCALAPPDATA")
+                if localappdata:
+                    local_path = Path(localappdata)
+                    if (local_path / "Claude-Data").is_dir():
+                        return True
+                    packages_dir = local_path / "Packages"
+                    if packages_dir.is_dir() and any(
+                        p.is_dir() and p.name.startswith("Claude_") for p in packages_dir.iterdir()
+                    ):
+                        return True
                 appdata = os.environ.get("APPDATA")
                 roaming = Path(appdata) if appdata else home / "AppData" / "Roaming"
                 if (roaming / "Claude").is_dir() or (home / "AppData" / "Local" / "Programs" / "Claude").is_dir():
@@ -494,21 +504,32 @@ npm() {{ if [ "$1" = "test" ]; then tokenjar run "npm $@"; else command npm "$@"
                 local_path = Path(localappdata)
                 claude_data = local_path / "Claude-Data"
                 if claude_data.is_dir():
+                    first_dir = None
                     for entry in claude_data.iterdir():
-                        candidate = entry / "claude_desktop_config.json"
-                        if candidate.exists():
-                            claude_cfg = candidate
-                            break
+                        if entry.is_dir():
+                            candidate = entry / "claude_desktop_config.json"
+                            if candidate.exists():
+                                claude_cfg = candidate
+                                break
+                            if not first_dir:
+                                first_dir = candidate
+                    if not claude_cfg:
+                        claude_cfg = first_dir
 
                 if not claude_cfg:
                     packages_dir = local_path / "Packages"
                     if packages_dir.is_dir():
+                        first_msix = None
                         for entry in packages_dir.iterdir():
                             if entry.is_dir() and entry.name.startswith("Claude_"):
                                 msix_cfg = entry / "LocalCache" / "Roaming" / "Claude" / "claude_desktop_config.json"
                                 if msix_cfg.exists():
                                     claude_cfg = msix_cfg
                                     break
+                                if not first_msix:
+                                    first_msix = msix_cfg
+                        if not claude_cfg:
+                            claude_cfg = first_msix
             if claude_cfg:
                 configs["Claude Desktop"] = claude_cfg
             else:
