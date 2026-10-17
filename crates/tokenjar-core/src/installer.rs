@@ -25,7 +25,33 @@ pub fn get_supported_ide_configs() -> Vec<(&'static str, PathBuf)> {
     // 1. Claude Desktop
     #[cfg(target_os = "windows")]
     {
-        if let Ok(appdata) = std::env::var("APPDATA") {
+        let mut claude_cfg = None;
+        if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
+            let packages_dir = PathBuf::from(localappdata).join("Packages");
+            if packages_dir.is_dir() {
+                if let Ok(entries) = std::fs::read_dir(&packages_dir) {
+                    for entry in entries.flatten() {
+                        let name = entry.file_name().to_string_lossy().to_string();
+                        if name.starts_with("Claude_") {
+                            let msix_cfg = entry
+                                .path()
+                                .join("LocalCache")
+                                .join("Roaming")
+                                .join("Claude")
+                                .join("claude_desktop_config.json");
+                            if msix_cfg.exists() {
+                                claude_cfg = Some(msix_cfg);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if let Some(cfg) = claude_cfg {
+            configs.push(("Claude Desktop", cfg));
+        } else if let Ok(appdata) = std::env::var("APPDATA") {
             configs.push((
                 "Claude Desktop",
                 PathBuf::from(appdata)

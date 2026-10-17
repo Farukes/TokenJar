@@ -121,14 +121,14 @@ enum Commands {
     ResetStats,
 
     /// Automatically configure TokenJar MCP server in Claude Desktop, Cursor, Windsurf, VS Code
-    #[command(hide = true, alias = "enable-mcp")]
+    #[command(hide = true, alias = "mcp-install")]
     InstallMcp {
         #[arg(long)]
         all: bool,
     },
 
     /// Safely remove TokenJar MCP configuration from all assistants
-    #[command(hide = true, alias = "disable-mcp")]
+    #[command(hide = true, alias = "mcp-uninstall")]
     UninstallMcp,
 
     /// Install /tokenjar slash command definitions across AGY CLI and Claude Code

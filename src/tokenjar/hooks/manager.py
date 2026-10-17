@@ -488,9 +488,23 @@ npm() {{ if [ "$1" = "test" ]; then tokenjar run "npm $@"; else command npm "$@"
 
         # Claude Desktop
         if os.name == "nt":
-            appdata = os.environ.get("APPDATA")
-            roaming = Path(appdata) if appdata else home / "AppData" / "Roaming"
-            configs["Claude Desktop"] = roaming / "Claude" / "claude_desktop_config.json"
+            claude_cfg = None
+            localappdata = os.environ.get("LOCALAPPDATA")
+            if localappdata:
+                packages_dir = Path(localappdata) / "Packages"
+                if packages_dir.is_dir():
+                    for entry in packages_dir.iterdir():
+                        if entry.is_dir() and entry.name.startswith("Claude_"):
+                            msix_cfg = entry / "LocalCache" / "Roaming" / "Claude" / "claude_desktop_config.json"
+                            if msix_cfg.exists():
+                                claude_cfg = msix_cfg
+                                break
+            if claude_cfg:
+                configs["Claude Desktop"] = claude_cfg
+            else:
+                appdata = os.environ.get("APPDATA")
+                roaming = Path(appdata) if appdata else home / "AppData" / "Roaming"
+                configs["Claude Desktop"] = roaming / "Claude" / "claude_desktop_config.json"
         elif sys.platform == "darwin":
             configs["Claude Desktop"] = (
                 home / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
