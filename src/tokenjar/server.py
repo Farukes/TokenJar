@@ -17,7 +17,7 @@ from tokenjar.tools.symbol_index import register_symbol_index_tools
 # Create the MCP server instance
 mcp = FastMCP(
     name="tokenjar",
-    version="1.1.1",
+    version="1.1.2",
 )
 
 # Register all tool modules

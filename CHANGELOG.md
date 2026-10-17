@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.2] - 2026-10-17 (Claude Desktop & Quoting Reliability)
+
+### 🐛 Bug Fixes & Ecosystem Improvements
+
+- **Windows Claude Desktop Path Auto-Detection:**
+  - Added support for Windows Claude Desktop un-sandboxed data directory (`%LOCALAPPDATA%\Claude-Data\*\claude_desktop_config.json`).
+  - Added automatic fallback to MSIX package cache (`%LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\Claude\claude_desktop_config.json`) and legacy Roaming path (`%APPDATA%\Claude\claude_desktop_config.json`).
+  - Fixed Windows Claude Desktop detection status reporting in both Rust core (`tokenjar status`) and Python hook manager.
+
+- **Claude Code CLI Integration:**
+  - Added full detection and MCP registration for `@anthropic-ai/claude-code` CLI via `~/.claude.json`.
+  - Configured native slash command `/tokenjar` in `~/.claude/commands/tokenjar.md`.
+
+- **Windows Command Quoting & Terminal Stability:**
+  - Resolved outer quote stripping in Windows command execution using `cmd /s /c` and sanitized raw argument wrapping.
+  - Eliminated duplicate clap subcommand aliases (`enable-mcp` / `disable-mcp`) preventing CLI startup panic.
+
+---
+
 ## [1.1.1] - 2026-10-06 (Windows Hardening & Indexing Optimization)
 
 ### 🐛 Bug Fixes & Performance Improvements
