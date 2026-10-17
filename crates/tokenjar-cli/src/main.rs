@@ -639,15 +639,13 @@ fn handle_update(force: bool) {
     let latest_version = latest_tag.as_deref().unwrap_or(current_version);
     println!("Latest Remote Release  : v{latest_version}");
 
-    if latest_version == current_version && !force {
+    if !is_newer_version(latest_version, current_version) && !force {
         println!("\n✨ TokenJar is already on the latest version!");
-        println!("   (No action needed. Current: v{current_version})");
+        println!("   (No action needed. Current: v{current_version}, Remote: v{latest_version})");
         return;
     }
 
-    if latest_version != current_version {
-        println!("\n🚀 New version detected: v{latest_version} (installed: v{current_version})");
-    }
+    println!("\n🚀 New version detected: v{latest_version} (installed: v{current_version})");
 
     let current_exe = std::env::current_exe().unwrap_or_default();
     let current_exe_str = current_exe.to_string_lossy().to_lowercase();
@@ -890,4 +888,16 @@ fn extract_executable_bytes(bytes: &[u8]) -> Result<Vec<u8>, String> {
     }
 
     Err("Downloaded file is not a valid executable or archive.".to_string())
+}
+
+fn is_newer_version(latest: &str, current: &str) -> bool {
+    let parse = |v: &str| -> Vec<u32> {
+        v.trim_start_matches('v')
+            .split('.')
+            .filter_map(|s| s.parse::<u32>().ok())
+            .collect()
+    };
+    let l_parts = parse(latest);
+    let c_parts = parse(current);
+    l_parts > c_parts
 }
